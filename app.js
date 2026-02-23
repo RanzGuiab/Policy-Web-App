@@ -72,3 +72,53 @@ searchInputs.forEach(input => {
     }
   });
 });
+        document.querySelectorAll('.nav-group-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const navItems = header.nextElementSibling;
+                header.classList.toggle('expanded');
+                if (navItems) {
+                    navItems.style.display = header.classList.contains('expanded') ? 'block' : 'none';
+                }
+            });
+        });
+
+// ===========================
+// MOBILE SIDEBAR TOGGLE
+// ===========================
+(() => {
+  const toggle = document.getElementById('sidebarToggle');
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+
+  if (!toggle || !sidebar || !overlay) return;
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  toggle.addEventListener('click', () => {
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+
+  overlay.addEventListener('click', closeSidebar);
+
+  // Close sidebar when a nav item is clicked (mobile UX)
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      if (window.innerWidth <= 650) closeSidebar();
+    });
+  });
+
+  // Close sidebar if window resizes above mobile breakpoint
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 650) closeSidebar();
+  });
+})();

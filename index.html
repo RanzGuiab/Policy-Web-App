@@ -8,8 +8,18 @@
 </head>
 <body>
 
+    <!-- SIDEBAR OVERLAY (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <!-- TOP NAVBAR -->
     <header class="navbar">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+        </button>
         <div class="navbar-brand">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
@@ -22,7 +32,6 @@
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
             <input type="text" placeholder="Search documents..." />
-            <span class="search-shortcut">⌘K</span>
         </div>
     </header>
 
@@ -31,69 +40,66 @@
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="sidebar-content">
-                <div class="sidebar-section">
-                    <div class="section-header">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                        Welcome Documents
-                    </div>
-
-                    <div class="nav-group">
-                        <div class="nav-group-header expanded">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                            <span>👋 Welcome</span>
-                        </div>
-                        <div class="nav-items">
-                            <a href="#" class="nav-item">Purpose &amp; Background</a>
-                            <a href="#" class="nav-item">Company History</a>
-                            <a href="#" class="nav-item">Team &amp; Structure</a>
-                            <a href="#" class="nav-item">Types of Content</a>
-                        </div>
-                    </div>
+            <div class="sidebar-section">
+                <div class="section-header">
+                Welcome Documents
                 </div>
 
-                <div class="sidebar-section">
-                    <div class="section-header">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                        Office &amp; Admin
-                    </div>
-                    <div class="nav-group">
-                        <div class="nav-group-header expanded">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                            <span>🏢 Office &amp; Admin</span>
-                        </div>
-                        <div class="nav-items">
-                            <a href="#" class="nav-item">Office Security</a>
-                            <a href="#" class="nav-item">GDPR Compliance</a>
-                            <a href="#" class="nav-item">Internal Communication</a>
-                        </div>
-                    </div>
+                <div class="nav-group">
+                <div class="nav-group-header" aria-expanded="false">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                    <span>👋 Welcome</span>
                 </div>
+                <div class="nav-items" style="display: none;">
+                    <a href="#" class="nav-item">Purpose &amp; Background</a>
+                    <a href="#" class="nav-item">Company History</a>
+                    <a href="#" class="nav-item">Team &amp; Structure</a>
+                    <a href="#" class="nav-item">Types of Content</a>
+                </div>
+                </div>
+            </div>
 
-                <div class="sidebar-section">
-                    <div class="section-header">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                        Sales &amp; Marketing
-                    </div>
-                    <div class="nav-group">
-                        <div class="nav-group-header expanded">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                            <span>📈 Sales Handbook</span>
-                        </div>
-                        <div class="nav-items">
-                            <a href="#" class="nav-item active">Lead Generation</a>
-                            <a href="#" class="nav-item">Guiding Statements</a>
-                            <a href="#" class="nav-item">Conducting Sales Calls</a>
-                            <a href="#" class="nav-item">Creating Proposals</a>
-                            <a href="#" class="nav-item">Sales Objections</a>
-                        </div>
-                    </div>
-                    <div class="nav-group">
-                        <div class="nav-group-header">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-                            <span>❓ FAQs</span>
-                        </div>
-                    </div>
+            <div class="sidebar-section">
+                <div class="section-header">
+                Office &amp; Admin
                 </div>
+                <div class="nav-group">
+                <div class="nav-group-header" aria-expanded="false">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                    <span>🏢 Office &amp; Admin</span>
+                </div>
+                <div class="nav-items" style="display: none;">
+                    <a href="#" class="nav-item">Office Security</a>
+                    <a href="#" class="nav-item">GDPR Compliance</a>
+                    <a href="#" class="nav-item">Internal Communication</a>
+                </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="section-header">
+                Sales &amp; Marketing
+                </div>
+                <div class="nav-group">
+                <div class="nav-group-header" aria-expanded="false">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                    <span>📈 Sales Handbook</span>
+                </div>
+                <div class="nav-items" style="display: none;">
+                    <a href="#" class="nav-item active">Lead Generation</a>
+                    <a href="#" class="nav-item">Guiding Statements</a>
+                    <a href="#" class="nav-item">Conducting Sales Calls</a>
+                    <a href="#" class="nav-item">Creating Proposals</a>
+                    <a href="#" class="nav-item">Sales Objections</a>
+                </div>
+                </div>
+                <div class="nav-group">
+                <div class="nav-group-header" aria-expanded="false">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                    <span>❓ FAQs</span>
+                </div>
+                </div>
+            </div>
 
             </div>
         </aside>
