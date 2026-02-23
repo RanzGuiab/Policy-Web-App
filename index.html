@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Company</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+    <!-- TOP NAVBAR -->
+    <header class="navbar">
+        <div class="navbar-brand">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            </svg>
+            <span class="brand-name">Company</span>
+        </div>
+        <div class="navbar-search">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" placeholder="Search documents..." />
+            <span class="search-shortcut">⌘K</span>
+        </div>
+    </header>
+
+    <div class="app-layout">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-content">
+                <div class="sidebar-section">
+                    <div class="section-header">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                        Welcome Documents
+                    </div>
+
+                    <div class="nav-group">
+                        <div class="nav-group-header expanded">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                            <span>👋 Welcome</span>
+                        </div>
+                        <div class="nav-items">
+                            <a href="#" class="nav-item">Purpose &amp; Background</a>
+                            <a href="#" class="nav-item">Company History</a>
+                            <a href="#" class="nav-item">Team &amp; Structure</a>
+                            <a href="#" class="nav-item">Types of Content</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="section-header">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                        Office &amp; Admin
+                    </div>
+                    <div class="nav-group">
+                        <div class="nav-group-header expanded">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                            <span>🏢 Office &amp; Admin</span>
+                        </div>
+                        <div class="nav-items">
+                            <a href="#" class="nav-item">Office Security</a>
+                            <a href="#" class="nav-item">GDPR Compliance</a>
+                            <a href="#" class="nav-item">Internal Communication</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="section-header">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                        Sales &amp; Marketing
+                    </div>
+                    <div class="nav-group">
+                        <div class="nav-group-header expanded">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                            <span>📈 Sales Handbook</span>
+                        </div>
+                        <div class="nav-items">
+                            <a href="#" class="nav-item active">Lead Generation</a>
+                            <a href="#" class="nav-item">Guiding Statements</a>
+                            <a href="#" class="nav-item">Conducting Sales Calls</a>
+                            <a href="#" class="nav-item">Creating Proposals</a>
+                            <a href="#" class="nav-item">Sales Objections</a>
+                        </div>
+                    </div>
+                    <div class="nav-group">
+                        <div class="nav-group-header">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                            <span>❓ FAQs</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <div class="content-grid">
+
+                <!-- Welcome Card -->
+                <div class="card welcome-card">
+                    <div class="card-header-label">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        </svg>
+                        Welcome
+                    </div>
+                    <h3>Policies</h3>
+                    <p>This is the single source of truth for your company's policies and procedures.</p>
+                    <p>Here you'll find all your compliance, operational and reference policies.</p>
+                    <a href="#" class="cta-link">Get started →</a>
+                </div>
+
+                <!-- Find an Answer -->
+                <div class="card find-card">
+                    <div class="card-header-label">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        Find an answer
+                    </div>
+                    <label class="field-label">Search documents via keywords:</label>
+                    <div class="input-wrapper">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" placeholder="e.g. Expense policy" />
+                    </div>
+                    <div class="or-divider"><span>or</span></div>
+                    <label class="field-label">Ask a question:</label>
+                    <div class="input-wrapper">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        <input type="text" placeholder="e.g. How do I file my expenses?" />
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Recently Viewed -->
+            <div class="card recent-card">
+                <div class="card-header-label">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    Recently Viewed
+                </div>
+                <div class="doc-list">
+                    <a href="#" class="doc-row">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        </svg>
+                        <span>Lead Generation</span>
+                        <span class="doc-meta">Sales Handbook · 2 hours ago</span>
+                    </a>
+                    <a href="#" class="doc-row">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        </svg>
+                        <span>Office Security</span>
+                        <span class="doc-meta">Office &amp; Admin · Yesterday</span>
+                    </a>
+                    <a href="#" class="doc-row">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        </svg>
+                        <span>Company History</span>
+                        <span class="doc-meta">Welcome Documents · 3 days ago</span>
+                    </a>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
