@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Company Policies</title>
+    <?!= include('styles'); ?>
+</head>
+<body>
+
+    <!-- SIDEBAR OVERLAY (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- TOP NAVBAR -->
+    <header class="navbar">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+        </button>
+
+        <!-- This code snippets calls the AuthCheck function that will check the
+        integration of the website to GCP. -->
+        <!--INDEV CODE STARTS HERE-->
+        <button id="auth-check-btn" onclick="runAuthCheck()" 
+          style="padding:8px 16px;background:var(--accent-bright);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;font-size:13px; display: none !important;">
+          Check Auth
+        </button>
+        <div id="auth-check-output"></div>
+        <!--INDEV CODE STOPS HERE-->
+
+        <div class="navbar-brand" onclick="showView('home')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            </svg>
+            <span class="brand-name">Company</span>
+        </div>
+        <span>build 03011546</span>
+        <div class="navbar-search">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="searchInput" placeholder="Search documents..." />
+                    <!-- Search dropdown — sits under navbar search input -->
+        <div id="search-dropdown" class="search-dropdown" style="display:none;">
+          <p id="search-results-count" class="search-dropdown-count"></p>
+          <div id="search-results-list" class="search-dropdown-list"></div>
+        </div>
+        </div>
+
+    </header>
+
+    <div class="app-layout">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-content">
+
+                <!-- Welcome Documents -->
+                <div class="sidebar-section">
+                    <div class="section-header">Welcome Documents</div>
+                    <div class="nav-group">
+                        <div class="nav-group-header">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                            <span>👋 Welcome</span>
+                        </div>
+                        <div class="nav-items" style="display:none;">
+                            <a href="#" class="nav-item" onclick="loadPolicy(event,'purpose_background','Purpose &amp; Background')">Purpose &amp; Background</a>
+                            <a href="#" class="nav-item" onclick="loadPolicy(event,'company_history','Company History')">Company History</a>
+                            <a href="#" class="nav-item" onclick="loadPolicy(event,'team_structure','Team &amp; Structure')">Team &amp; Structure</a>
+                            <a href="#" class="nav-item" onclick="loadPolicy(event,'types_of_content','Types of Content')">Types of Content</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Office & Admin -->
+                <div class="sidebar-section">
+                    <div class="section-header">Office &amp; Admin</div>
+                    <div class="nav-group">
+                        <div class="nav-group-header">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                            <span>🏢 Office &amp; Admin</span>
+                        </div>
+                        <div class="nav-items" style="display:none;">
+                            <a href="#" class="nav-item" onclick="loadPolicy(event,'office_security','Office Security')">Office Security</a>
+                            <a href="#" class="nav-item" onclick="loadPolicy(event,'gdpr_compliance','GDPR Compliance')">GDPR Compliance</a>
+                            <a href="#" class="nav-item" onclick="loadPolicy(event,'internal_communication','Internal Communication')">Internal Communication</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sales & Marketing -->
+                <div class="sidebar-section">
+                    <div class="section-header">Sales &amp; Marketing</div>
+                    <div class="nav-group">
+                        <div class="nav-group-header">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                            <span>📈 Sales Handbook</span>
+                        </div>
+                        <div class="nav-items" style="display:none;">
+                            <a href="#" class="nav-item" onclick="loadPolicy(event,'lead_generation','Lead Generation')">Lead Generation</a>
+                            <a href="#" class="nav-item" onclick="loadPolicy(event,'guiding_statements','Guiding Statements')">Guiding Statements</a>
+                            <a href="#" class="nav-item" onclick="loadPolicy(event,'sales_calls','Conducting Sales Calls')">Conducting Sales Calls</a>
+                            <a href="#" class="nav-item" onclick="loadPolicy(event,'creating_proposals','Creating Proposals')">Creating Proposals</a>
+                            <a href="#" class="nav-item" onclick="loadPolicy(event,'sales_objections','Sales Objections')">Sales Objections</a>
+                        </div>
+                    </div>
+                    <div class="nav-group">
+                        <div class="nav-group-header">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                            <span>❓ FAQs</span>
+                        </div>
+                        <div class="nav-items" style="display:none;">
+                            <a href="#" class="nav-item" onclick="loadPolicy(event,'faqs','FAQs')">View FAQs</a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <!-- ===================== -->
+            <!--   VIEW: HOME          -->
+            <!-- ===================== -->
+            <div id="view-home" class="view">
+
+                <div class="content-grid">
+
+                    <!-- Welcome Card -->
+                    <div class="card welcome-card">
+                        <div class="card-header-label">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            </svg>
+                            Welcome
+                        </div>
+                        <h3>Policies</h3>
+                        <p>This is the single source of truth for your company's policies and procedures.</p>
+                        <p>Here you'll find all your compliance, operational and reference policies.</p>
+                        <a href="#" class="cta-link" onclick="loadPolicy(event,'purpose_background','Purpose &amp; Background')">Get started →</a>
+                    </div>
+
+                </div>
+
+                <!-- Recently Viewed -->
+                <div class="card recent-card">
+                    <div class="card-header-label">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        Recently Viewed
+                    </div>
+                    <div class="doc-list" id="recently-viewed-list">
+                        <p class="doc-empty">No recently viewed documents yet.</p>
+                    </div>
+                </div>
+
+            </div>
+            <!-- end #view-home -->
+
+
+            <!-- ============================================ -->
+            <!--   VIEW: POLICY PAGE (reused for all docs)   -->
+            <!-- ============================================ -->
+            <div id="view-policy" class="view" style="display:none;">
+
+                <!-- Back button -->
+                <button class="back-btn" onclick="showView('home')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    Back to Home
+                </button>
+
+                <!-- CONTAINER 1: Media + Summary -->
+                <div class="card policy-overview-card">
+                    <div class="policy-overview-grid">
+                        <!-- Left: Image or Video -->
+                        <div class="policy-media" id="policy-media-content">
+                            <div class="media-placeholder">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                    <polyline points="21 15 16 10 5 21"/>
+                                </svg>
+                                <span>No media configured</span>
+                            </div>
+                        </div>
+                    <!-- IMAGE ZOOM MODAL -->
+                    <div id="image-zoom-overlay" class="image-zoom-overlay" onclick="closeImageZoom()">
+                      <button class="image-zoom-close" onclick="closeImageZoom()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <line x1="18" y1="6" x2="6" y2="18"/>
+                          <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </button>
+                      <img id="image-zoom-img" src="" alt="" onclick="event.stopPropagation()" />
+                      <span id="image-zoom-caption" class="image-zoom-caption"></span>
+                    </div>
+                        <!-- Right: Summary -->
+                        <div class="policy-summary">
+                            <div class="card-header-label">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="12"/>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                                Quick Overview
+                            </div>
+                            <h2 id="policy-title"></h2>
+                            <p id="policy-tagline" class="policy-tagline"></p>
+                            <ul id="policy-bullets" class="policy-bullets" onclick="()"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONTAINER 2: Full content from Google Docs -->
+                <div class="card policy-full-card">
+                    <div class="card-header-label">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        Full Document
+                    </div>
+                    <div id="policy-full-content" class="policy-full-body">
+                        <span class="doc-loading">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <!-- end #view-policy -->
+            <!--start #bullet-modal-overlay-->
+            <div id="bullet-modal-overlay" class="modal-overlay" onclick="closeModal()">
+                <div class="modal-box" onclick="event.stopPropagation()">
+
+                    <!-- Media container (populated by JS when src exists) -->
+                    <div id="modal-media-container" class="modal-media" style="display:none;"></div>
+
+                    <!-- START: Media type switcher — shown only when both video + slides exist -->
+                    <div id="modal-media-switcher" class="media-switcher" style="display:none;">
+                      <button
+                        id="switcher-btn-slides"
+                        class="media-switcher-btn active"
+                        onclick="switchModalMedia('slides')">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="2" y="3" width="20" height="14" rx="2"/>
+                          <line x1="8" y1="21" x2="16" y2="21"/>
+                          <line x1="12" y1="17" x2="12" y2="21"/>
+                        </svg>
+                        Slides
+                      </button>
+                      <button
+                        id="switcher-btn-video"
+                        class="media-switcher-btn"
+                        onclick="switchModalMedia('video')">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polygon points="23 7 16 12 23 17 23 7"/>
+                          <rect x="1" y="5" width="15" height="14" rx="2"/>
+                        </svg>
+                        Video
+                      </button>
+                    </div>
+                    <!-- END: Media type switcher -->
+
+                    <!-- Header label -->
+                    <div class="modal-header-label">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                        Policy Detail
+                    </div>
+
+                    <!-- Placeholder (shown when no media is configured) -->
+                    <div id="modal-media-placeholder" class="modal-media-placeholder">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                        <span>Add image or video in POLICY_META</span>
+                    </div>
+
+
+                    <!-- Title -->
+                    <h3 id="modal-title"></h3>
+                    <!-- Body -->
+                    <p id="modal-body"></p>
+                </div>
+            </div>
+            <!--end #bullet-modal-overlay-->
+        </main>
+    </div>
+
+    <?!= include('app'); ?>
+</body>
+</html>
