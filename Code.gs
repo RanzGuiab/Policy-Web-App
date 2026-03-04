@@ -71,6 +71,183 @@ var DOCS = {
   'faqs':                   '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI'
 };
 
+function debugGetPolicyMeta() {
+  var ss = SpreadsheetApp.openById('1VZy3i_uRU__VQkR11xdQtP9KUSi3jF8ow-dg6eHqQuU');
+  
+  // ── Check sheet names ──────────────────────────────────
+  var sheets = ss.getSheets().map(function(s) { return s.getName(); });
+  Logger.log('Sheet tabs found: ' + JSON.stringify(sheets));
+
+  // ── Check Policies tab ─────────────────────────────────
+  var policiesSheet = ss.getSheetByName('Policies');
+  if (!policiesSheet) {
+    Logger.log('ERROR: No tab named "Policies" — check exact name');
+    return;
+  }
+  var pRows = policiesSheet.getDataRange().getValues();
+  Logger.log('Policies rows: ' + pRows.length);
+  Logger.log('Policies row 0 (headers): ' + JSON.stringify(pRows[0]));
+  Logger.log('Policies row 1 (first data): ' + JSON.stringify(pRows[1]));
+
+  // ── Check Bullets tab ──────────────────────────────────
+  var bulletsSheet = ss.getSheetByName('Bullets');
+  if (!bulletsSheet) {
+    Logger.log('ERROR: No tab named "Bullets" — check exact name');
+    return;
+  }
+  var bRows = bulletsSheet.getDataRange().getValues();
+  Logger.log('Bullets rows: ' + bRows.length);
+  Logger.log('Bullets row 0 (headers): ' + JSON.stringify(bRows[0]));
+  Logger.log('Bullets row 1 (first data): ' + JSON.stringify(bRows[1]));
+
+  // ── Check BulletDetails tab ────────────────────────────
+  var detailsSheet = ss.getSheetByName('BulletDetails');
+  if (!detailsSheet) {
+    Logger.log('ERROR: No tab named "BulletDetails" — check exact name');
+    return;
+  }
+  var dRows = detailsSheet.getDataRange().getValues();
+  Logger.log('BulletDetails rows: ' + dRows.length);
+  Logger.log('BulletDetails row 0 (headers): ' + JSON.stringify(dRows[0]));
+  Logger.log('BulletDetails row 1 (first data): ' + JSON.stringify(dRows[1]));
+
+  // ── Run actual getPolicyMeta and log result ────────────
+  var result = getPolicyMeta();
+  var keys   = Object.keys(result);
+  Logger.log('getPolicyMeta keys returned: ' + keys.length);
+  Logger.log('First key: ' + keys[0]);
+  Logger.log('First value: ' + JSON.stringify(result[keys[0]]));
+}
+
+// ===========================
+// SHEET CONFIG
+// ===========================
+var SHEET_ID = '1VZy3i_uRU__VQkR11xdQtP9KUSi3jF8ow-dg6eHqQuU';
+
+// ===========================
+// GET POLICY META FROM SHEET
+// Reads Policies, Bullets, BulletDetails tabs
+// Returns a POLICY_META object identical
+// in shape to the hardcoded version in app.html
+// ===========================
+function getPolicyMeta() {
+  var ss             = SpreadsheetApp.openById(SHEET_ID);
+  var policiesSheet  = ss.getSheetByName('Policies');
+  var bulletsSheet   = ss.getSheetByName('Bullets');
+  var detailsSheet   = ss.getSheetByName('BulletDetails');
+
+  // ── Read all rows ───────────────────────────────────────
+  var policies = policiesSheet.getDataRange().getValues();
+  var bullets  = bulletsSheet.getDataRange().getValues();
+  var details  = detailsSheet.getDataRange().getValues();
+
+  // ── Skip header row (row 0) ─────────────────────────────
+  var meta = {};
+
+  // ── 1. Build base policy entries ────────────────────────
+  for (var i = 1; i < policies.length; i++) {
+    var row      = policies[i];
+    var docKey   = row[0].toString().trim();
+    if (!docKey) continue;
+
+    meta[docKey] = {
+      tagline:       row[1].toString().trim(),
+      media: {
+        type:        row[2].toString().trim(),
+        id:          row[3].toString().trim(),
+        caption:     row[4].toString().trim()
+      },
+      bullets:       [],
+      bulletDetails: {}
+    };
+  }
+
+  // ── 2. Populate bullets (sorted by order col) ───────────
+  // Col: A=docKey B=bulletText C=order
+  var bulletRows = [];
+  for (var i = 1; i < bullets.length; i++) {
+    var row = bullets[i];
+    if (!row[0]) continue;
+    bulletRows.push({
+      docKey: row[0].toString().trim(),
+      text:   row[1].toString().trim(),
+      order:  parseInt(row[2]) || i
+    });
+  }
+  bulletRows.sort(function(a, b) { return a.order - b.order; });
+
+  bulletRows.forEach(function(b) {
+    if (meta[b.docKey]) {
+      meta[b.docKey].bullets.push(b.text);
+    }
+  });
+
+  // ── 3. Populate bulletDetails ────────────────────────────
+  // Col: A=docKey B=bulletText C=title D=body
+  //      E=mediaType F=mediaId G=mediaCaption
+  //      H=mediaDefault I=slidesId J=videoId K=videoType
+  for (var i = 1; i < details.length; i++) {
+    var row        = details[i];
+    var docKey     = row[0].toString().trim();
+    var bulletText = row[1].toString().trim();
+    if (!docKey || !bulletText) continue;
+    if (!meta[docKey])          continue;
+
+    var title      = row[2].toString().trim();
+    var body       = row[3].toString().trim();
+    var mediaType  = row[4].toString().trim();
+    var mediaId    = row[5].toString().trim();
+    var mediaCap   = row[6].toString().trim();
+    var mediaDef   = row[7].toString().trim();  // 'slides' or 'video'
+    var slidesId   = row[8].toString().trim();
+    var videoId    = row[9].toString().trim();
+    var videoType  = row[10].toString().trim(); // 'gdrive-video' etc
+
+    // ── Build media object ─────────────────────────────
+    var media = null;
+
+    if (mediaType === 'dual') {
+      // Has both slides + video tabs
+      media = {
+        default: mediaDef || 'slides',
+        slides: {
+          type:    'gslides',
+          id:      slidesId,
+          caption: ''
+        },
+        video: {
+          type:    videoType || 'gdrive-video',
+          id:      videoId,
+          caption: ''
+        }
+      };
+    } else if (mediaType && mediaId) {
+      // Single media type
+      media = {
+        type:    mediaType,
+        id:      mediaId,
+        caption: mediaCap
+      };
+    } else if (mediaType && !mediaId) {
+      // Type set but no ID (e.g. placeholder audio)
+      media = {
+        type:    mediaType,
+        id:      '',
+        caption: mediaCap
+      };
+    }
+    // else: media stays null
+
+    meta[docKey].bulletDetails[bulletText] = {
+      title: title,
+      body:  body,
+      media: media
+    };
+  }
+
+  return meta;
+}
+
 // ===========================
 // AUTH & INTEGRATION STATUS CHECK
 // ===========================
@@ -155,7 +332,34 @@ function checkAuthStatus() {
 // ===========================
 function checkMediaIds(ids) {
   var results = {};
-
+  // ── Youtube ───────────────────────────────────────────────
+  if (ids.videoId) {
+    // ── YouTube ID — no Drive check needed, just confirm it exists
+    if (ids.videoId.length < 20) {
+      try {
+        var ytUrl = 'https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=' + ids.videoId + '&format=json';
+        var resp  = UrlFetchApp.fetch(ytUrl, { muteHttpExceptions: true });
+        results.driveVideo = resp.getResponseCode() === 200
+          ? { ok: true,  message: 'YouTube video reachable' }
+          : { ok: false, message: 'YouTube video not found or private' };
+      } catch(e) {
+        results.driveVideo = { ok: false, message: e.message };
+      }
+    } else {
+      // ── Drive video ID
+      try {
+        var f = DriveApp.getFileById(ids.videoId);
+        results.driveVideo = {
+          ok:      true,
+          message: '"' + f.getName() + '" — ' + Math.round(f.getSize() / 1024) + ' KB'
+        };
+      } catch(e) {
+        results.driveVideo = { ok: false, message: e.message };
+      }
+    }
+  } else {
+    results.driveVideo = { ok: true, message: 'No video ID configured — skipped' };
+  }
   // ── Slides ───────────────────────────────────────────────
   if (ids.slidesId) {
     try {
@@ -248,113 +452,129 @@ function getDocContent(docKey) {
   var docId = DOCS[docKey];
 
   if (!docId) {
-    return '<p style="color:#9ca3af;font-style:italic;">No document configured for: ' + docKey + '</p>';
+    return { type: 'error', message: 'No document configured for: ' + docKey };
   }
 
-  try {
-    var doc  = DocumentApp.openById(docId);
-    var body = doc.getBody();
-    var html = '';
-
-    for (var i = 0; i < body.getNumChildren(); i++) {
-      var child = body.getChild(i);
-      var type  = child.getType();
-
-      if (type === DocumentApp.ElementType.PARAGRAPH) {
-        var para = child.asParagraph();
-
-        // ✅ Check ALL children of paragraph for horizontal rule
-        if (containsHorizontalRule(para)) {
-          html += '<hr class="doc-divider"/>';
-        } else {
-          html += convertParagraph(para);
-        }
-
-      } else if (type === DocumentApp.ElementType.LIST_ITEM) {
-        html += convertListItem(child.asListItem());
-
-      } else if (type === DocumentApp.ElementType.TABLE) {
-        html += convertTable(child.asTable());
-      }
-    }
-
-    return html || '<p style="color:#9ca3af;font-style:italic;">This document is empty.</p>';
-
-  } catch (e) {
-    return '<p style="color:#dc2626;font-style:italic;">Error loading document: ' + e.message + '</p>';
-  }
+  return {
+    type: 'embed',
+    url:  'https://docs.google.com/document/d/' + docId + '/preview'
+  };
 }
 
-// ✅ Scan every child of a paragraph for HORIZONTAL_RULE
-function containsHorizontalRule(para) {
-  for (var i = 0; i < para.getNumChildren(); i++) {
-    if (para.getChild(i).getType() === DocumentApp.ElementType.HORIZONTAL_RULE) {
-      return true;
-    }
-  }
-  return false;
-}
+// // ✅ Scan every child of a paragraph for HORIZONTAL_RULE
+// function containsHorizontalRule(para) {
+//   for (var i = 0; i < para.getNumChildren(); i++) {
+//     if (para.getChild(i).getType() === DocumentApp.ElementType.HORIZONTAL_RULE) {
+//       return true;
+//     }
+//   }
+//   return false;
+// }
+
+// // ===========================
+// // PARAGRAPH → HTML
+// // Handles: Heading 1-6, Normal, with
+// // inline bold / italic / underline
+// // ===========================
+// function convertParagraph(para) {
+//   var text = para.getText();
+//   if (!text.trim()) return '<br>';  // empty line = line break
+
+//   var heading = para.getHeading();
+//   var inlineHtml = convertInlineText(para);
+//   var align = getAlignment(para.getAlignment());
+
+//   switch (heading) {
+//     case DocumentApp.ParagraphHeading.HEADING1:
+//       return '<h1 style="' + align + '">' + inlineHtml + '</h1>';
+//     case DocumentApp.ParagraphHeading.HEADING2:
+//       return '<h2 style="' + align + '">' + inlineHtml + '</h2>';
+//     case DocumentApp.ParagraphHeading.HEADING3:
+//       return '<h3 style="' + align + '">' + inlineHtml + '</h3>';
+//     case DocumentApp.ParagraphHeading.HEADING4:
+//       return '<h4 style="' + align + '">' + inlineHtml + '</h4>';
+//     case DocumentApp.ParagraphHeading.HEADING5:
+//       return '<h5 style="' + align + '">' + inlineHtml + '</h5>';
+//     case DocumentApp.ParagraphHeading.HEADING6:
+//       return '<h6 style="' + align + '">' + inlineHtml + '</h6>';
+//     default:
+//       return '<p style="' + align + '">' + inlineHtml + '</p>';
+//   }
+// }
+
+
+// // ===========================
+// // LIST ITEM → HTML
+// // Handles: bullet + numbered lists,
+// // with nesting levels
+// // ===========================
+// function convertListItem(item) {
+//   var inlineHtml = convertInlineText(item);
+//   var glyphType = item.getGlyphType();
+//   var nestingLevel = item.getNestingLevel();
+//   var indent = (nestingLevel * 20) + 'px';
+
+//   var tag = (
+//     glyphType === DocumentApp.GlyphType.BULLET ||
+//     glyphType === DocumentApp.GlyphType.HOLLOW_BULLET ||
+//     glyphType === DocumentApp.GlyphType.SQUARE_BULLET
+//   ) ? 'ul' : 'ol';
+
+//   return '<' + tag + ' style="margin-left:' + indent + ';margin:4px 0 4px ' + indent + ';padding-left:20px;">' +
+//          '<li>' + inlineHtml + '</li>' +
+//          '</' + tag + '>';
+// }
+
+// function debugTable(table) {
+//   Logger.log('Rows: ' + table.getNumRows());
+//   Logger.log('Cols: ' + table.getRow(0).getNumCells());
+//   Logger.log('Text: "' + table.getRow(0).getCell(0).getText() + '"');
+//   Logger.log('Border: ' + (table.getBorderWidth ? table.getBorderWidth() : 'N/A'));
+// }
 
 // ===========================
-// PARAGRAPH → HTML
-// Handles: Heading 1-6, Normal, with
-// inline bold / italic / underline
+// VIDEO FETCH — BASE64
 // ===========================
-function convertParagraph(para) {
-  var text = para.getText();
-  if (!text.trim()) return '<br>';  // empty line = line break
-
-  var heading = para.getHeading();
-  var inlineHtml = convertInlineText(para);
-  var align = getAlignment(para.getAlignment());
-
-  switch (heading) {
-    case DocumentApp.ParagraphHeading.HEADING1:
-      return '<h1 style="' + align + '">' + inlineHtml + '</h1>';
-    case DocumentApp.ParagraphHeading.HEADING2:
-      return '<h2 style="' + align + '">' + inlineHtml + '</h2>';
-    case DocumentApp.ParagraphHeading.HEADING3:
-      return '<h3 style="' + align + '">' + inlineHtml + '</h3>';
-    case DocumentApp.ParagraphHeading.HEADING4:
-      return '<h4 style="' + align + '">' + inlineHtml + '</h4>';
-    case DocumentApp.ParagraphHeading.HEADING5:
-      return '<h5 style="' + align + '">' + inlineHtml + '</h5>';
-    case DocumentApp.ParagraphHeading.HEADING6:
-      return '<h6 style="' + align + '">' + inlineHtml + '</h6>';
-    default:
-      return '<p style="' + align + '">' + inlineHtml + '</p>';
-  }
-}
-
-
-// ===========================
-// LIST ITEM → HTML
-// Handles: bullet + numbered lists,
-// with nesting levels
-// ===========================
-function convertListItem(item) {
-  var inlineHtml = convertInlineText(item);
-  var glyphType = item.getGlyphType();
-  var nestingLevel = item.getNestingLevel();
-  var indent = (nestingLevel * 20) + 'px';
-
-  var tag = (
-    glyphType === DocumentApp.GlyphType.BULLET ||
-    glyphType === DocumentApp.GlyphType.HOLLOW_BULLET ||
-    glyphType === DocumentApp.GlyphType.SQUARE_BULLET
-  ) ? 'ul' : 'ol';
-
-  return '<' + tag + ' style="margin-left:' + indent + ';margin:4px 0 4px ' + indent + ';padding-left:20px;">' +
-         '<li>' + inlineHtml + '</li>' +
-         '</' + tag + '>';
-}
-
-function debugTable(table) {
-  Logger.log('Rows: ' + table.getNumRows());
-  Logger.log('Cols: ' + table.getRow(0).getNumCells());
-  Logger.log('Text: "' + table.getRow(0).getCell(0).getText() + '"');
-  Logger.log('Border: ' + (table.getBorderWidth ? table.getBorderWidth() : 'N/A'));
-}
+// Reads a Drive MP4 file and returns it
+// as a base64 data URL for use in <video>.
+//
+// ⚠️  PERFORMANCE NOTE:
+// Base64 encoding adds ~33% size overhead.
+// Apps Script is not a media server.
+// This works well for files <3MB (720p compressed).
+//
+// ── Recommended file spec ────────────────────────
+//   Format:    MP4
+//   Codec:     H.264 video + AAC audio
+//   Max res:   720p
+//   Target:    <3MB per file
+//   Tool:      HandBrake (free) — use preset "Fast 720p30"
+//
+// ── When to migrate to GCP Cloud Storage ────────
+//   When any video exceeds 5MB OR load time > 5s.
+//
+//   Migration path (zero code change in frontend):
+//   1. Create GCP project at console.cloud.google.com
+//   2. Create a Cloud Storage bucket (Standard, regional)
+//   3. Upload MP4s → make each object public
+//   4. In Code.gs replace this function with:
+//
+//      function getVideoBase64(fileId) {
+//        var GCS_BASE = 'https://storage.googleapis.com/YOUR_BUCKET/';
+//        var FILE_MAP = {
+//          '1k2PGK5O4p5_...': 'intro-video.mp4',
+//          '136hKW2YLOXr...': 'mission-video.mp4'
+//        };
+//        return GCS_BASE + (FILE_MAP[fileId] || fileId + '.mp4');
+//      }
+//
+//   5. In app.html renderMediaBox gdrive-video case,
+//      change <source src="...base64..."> to the returned URL.
+//      The preloader and cache stay exactly as-is.
+//
+//   Estimated cost: ~$0.02/GB storage + $0.12/GB egress
+//   Free tier:       5GB storage + 1GB egress/month
+// =====================================================
 
 function getVideoBase64(fileId) {
   var file  = DriveApp.getFileById(fileId);
@@ -362,6 +582,10 @@ function getVideoBase64(fileId) {
   var b64   = Utilities.base64Encode(bytes);
   return 'data:video/mp4;base64,' + b64;
 }
+
+// ===========================
+// TABLE → HTML
+// ===========================
 
 // ===========================
 // TABLE → HTML

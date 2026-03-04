@@ -1,480 +1,110 @@
 <script>
-// ============================================================
-// POLICY METADATA REGISTRY
-// ============================================================
-// Central configuration object for all policy sections.
-// Each key maps to a docKey used in Code.gs DOCS map.
-//
-// Structure per entry:
-//   media        — top-level policy card media (image/audio)
-//   tagline      — short description shown on policy page
-//   bullets      — array of bullet point strings
-//   bulletDetails — map of bullet text → modal detail object
-//
-// bulletDetail structure:
-//   title  — modal heading
-//   body   — fallback text (shown if Gemini is unavailable)
-//   media  — single media object OR dual media object
-//
-// Dual media object structure:
-//   default — which tab opens first ('slides' or 'video')
-//   slides  — { type, id, caption }
-//   video   — { type, id, caption } or { type, id, slide, caption }
-//
-// Supported media types:
-//   'image'        — Google Drive image (thumbnail URL)
-//   'audio'        — Google Drive audio preview (iframe)
-//   'gslides'      — Google Slides embed (user navigates)
-//   'gslides-auto' — Google Slides embed (auto-advance)
-//   'gslides-video'— Google Slides locked to a specific slide
-//   'gdrive-video' — Google Drive MP4 (base64 via Apps Script)
-//   'youtube'      — YouTube embed (iframe)
-//   'vimeo'        — Vimeo embed (iframe) [blocked in some infra]
-//
-// DO NOTE! If embedding video, it uses base64 so the smaller the video file the
-// better. Usually <5MB is optimal for this type. YouTube doesn't work nor vimeo.
-// Video framing will be improved by the use of CDN via Google Cloud though needs
-// credits.
-// ============================================================
-var POLICY_META = {
-  'purpose_background': {
-    media: { type: 'image', id: '1J5k3Lp7maFZWzZFSUt2IJHC70GfxW94r', caption: '' },
-    tagline: 'Understand why this company exists, what we stand for, and the foundation behind our policies.',
-    bullets: [
-      'Why the company was founded',
-      'Our mission, vision, and values',
-      'How this handbook was created',
-      'Who this document is for'
-    ],
-    bulletDetails: {
-      'Why the company was founded': {
-        title: 'Why the company was founded',
-        body: 'Loading...', 
-        media: { 
-          default: 'slides',
-          slides: { type: 'gslides', id: '1-ZanoIZ9oh-L99KKaFsuxO49S41Q1GyKxaZ73SvD1d8', caption: '' },
-        video: {
-          type: 'gdrive-video', id: '1k2PGK5O4p5_FDWOhiSU5n40bfpfsESaJ', caption: ''
-          },
-        }
-      },
-      'Our mission, vision, and values': {
-        title: 'Mission, Vision & Values',
-        body: 'Mission: To empower employees with clear policies. Vision: A workplace built on trust and transparency. Values: Integrity, Accountability, and Security-first thinking.',
-        media: {
-          default: 'slides',
-          slides: { type: 'gslides', id: '1-ZanoIZ9oh-L99KKaFsuxO49S41Q1GyKxaZ73SvD1d8', caption: '' },
-        video: {
-          type: 'gdrive-video', id: '136hKW2YLOXry0_qedw0DfI7T9H2Fa9Wf', caption: ''
-          },
-        }
-      },
-      'How this handbook was created': {
-        title: 'How this handbook was created',
-        body: 'This handbook was collaboratively developed by HR, Legal, and IT Security teams. It is reviewed quarterly and updated whenever a policy changes.',
-        media: {
-          default: 'slides',                                          // which tab opens first
-          slides: { type: 'gslides', id: '1-ZanoIZ9oh-L99KKaFsuxO49S41Q1GyKxaZ73SvD1d8',   caption: '' },
-          video: {
-            type: 'gslides-video',
-            id: '1-ZanoIZ9oh-L99KKaFsuxO49S41Q1GyKxaZ73SvD1d8',
-            slide: 5,           // ← the slide number your video is on
-            caption: ''
-          }
-        }
-      },
-      'Who this document is for': {
-        title: 'Who this document is for',
-        body: 'This handbook applies to all full-time employees, contractors, and third-party vendors who have access to company systems or data.',
-        media: null
-      }
-    }
-  },
-  'company_history': {
-    media: { type: 'image', id: '', caption: 'Company History' },
-    tagline: 'A look at how our company started and grew to where it is today.',
-    bullets: [
-      'Founding story and key milestones',
-      'Growth and major achievements',
-      'Our culture and core values over time',
-      'Where we are headed'
-    ],
-    bulletDetails: {
-      'Founding story and key milestones': {
-        title: 'Founding Story & Milestones',
-        body: 'Founded in 2010, the company has grown from a 5-person startup to a 500+ employee organization. Key milestones include our ISO 27001 certification in 2015 and international expansion in 2019.',
-        media: { type: 'audio', id: '', caption: 'Audio overview — NotebookLM' }
-      },
-      'Growth and major achievements': {
-        title: 'Growth & Achievements',
-        body: 'We have consistently grown year-over-year, achieving recognition as a top employer and industry leader in compliance and data security practices.',
-        media: null
-      },
-      'Our culture and core values over time': {
-        title: 'Culture & Core Values',
-        body: 'Our culture has always centered on people-first leadership, open communication, and continuous improvement. These values are reflected in every policy in this handbook.',
-        media: null
-      },
-      'Where we are headed': {
-        title: 'Our Future Direction',
-        body: 'We are expanding into new markets and investing heavily in security infrastructure. Our roadmap includes AI-assisted compliance tools and a fully digital onboarding experience.',
-        media: null
-      }
-    }
-  },
-  'team_structure': {
-    media: { type: 'image', id: '', caption: 'Team & Structure' },
-    tagline: 'How our teams are organized and who does what.',
-    bullets: [
-      'Organizational chart overview',
-      'Department responsibilities',
-      'Key contacts per team',
-      'Reporting structure'
-    ],
-    bulletDetails: {
-      'Organizational chart overview': {
-        title: 'Organizational Chart',
-        body: 'The company is organized into 5 main departments: Operations, IT & Security, HR, Sales & Marketing, and Finance. Each department is led by a Director who reports to the C-suite.',
-        media: { type: 'image', id: '', caption: 'Org chart' }
-      },
-      'Department responsibilities': {
-        title: 'Department Responsibilities',
-        body: 'IT & Security: manages all systems, access controls, and incident response. HR: handles onboarding, offboarding, and policy compliance. Operations: ensures day-to-day business continuity.',
-        media: null
-      },
-      'Key contacts per team': {
-        title: 'Key Contacts',
-        body: 'For IT issues: it-support@company.com. For HR inquiries: hr@company.com. For security incidents: security@company.com. All contacts are available on the internal intranet.',
-        media: null
-      },
-      'Reporting structure': {
-        title: 'Reporting Structure',
-        body: 'All employees report to their direct line manager, who reports to the department head. Dotted-line reporting exists between IT Security and all other departments for compliance matters.',
-        media: null
-      }
-    }
-  },
-  'types_of_content': {
-    media: { type: 'image', id: '', caption: 'Types of Content' },
-    tagline: 'An overview of the types of documents and content in this handbook.',
-    bullets: [
-      'Compliance policies',
-      'Operational guides',
-      'Reference documents',
-      'How to navigate this handbook'
-    ],
-    bulletDetails: {
-      'Compliance policies': {
-        title: 'Compliance Policies',
-        body: 'These are mandatory policies required by law or regulatory frameworks (e.g., GDPR, ISO 27001). All employees must read and acknowledge these policies during onboarding and annually thereafter.',
-        media: null
-      },
-      'Operational guides': {
-        title: 'Operational Guides',
-        body: 'Step-by-step guides for day-to-day operations. These cover processes like submitting expenses, requesting IT access, and handling customer data.',
-        media: null
-      },
-      'Reference documents': {
-        title: 'Reference Documents',
-        body: 'Supporting materials like org charts, contact lists, and glossaries. These are for reference only and do not require formal acknowledgment.',
-        media: null
-      },
-      'How to navigate this handbook': {
-        title: 'Navigating this Handbook',
-        body: 'Use the sidebar to browse by category. Click any document to read the full policy. Use the search bar at the top to find specific topics quickly.',
-        media: { type: 'youtube', id: '', caption: 'Watch: How to use this handbook' }
-      }
-    }
-  },
-  'office_security': {
-    media: { type: 'image', id: '', caption: 'Office Security' },
-    tagline: 'Physical and digital security practices for our office environment.',
-    bullets: [
-      'Always badge in — do not allow tailgating',
-      'Lock your screen when stepping away',
-      'Visitors must be escorted at all times',
-      'Report lost access cards immediately to IT'
-    ],
-    bulletDetails: {
-      'Always badge in — do not allow tailgating': {
-        title: 'Badge In & No Tailgating',
-        body: 'Every employee must use their access card to enter secured areas. Never hold the door open for someone who has not badged in — this is a security violation regardless of whether you recognize the person.',
-        media: { type: 'audio', id: '', caption: 'Audio overview — NotebookLM' }
-      },
-      'Lock your screen when stepping away': {
-        title: 'Lock Your Screen',
-        body: 'Use Win+L (Windows) or Cmd+Ctrl+Q (Mac) to lock your screen whenever you leave your desk. An unlocked screen is a data breach waiting to happen.',
-        media: null
-      },
-      'Visitors must be escorted at all times': {
-        title: 'Visitor Escort Policy',
-        body: 'All visitors must sign in at reception and wear a visitor badge. They must be accompanied by an employee at all times. Never leave a visitor unattended in any secured area.',
-        media: null
-      },
-      'Report lost access cards immediately to IT': {
-        title: 'Lost Access Card Reporting',
-        body: 'If your access card is lost or stolen, report it to IT Security immediately at security@company.com or call the IT helpdesk. Your card will be deactivated and a replacement issued within 24 hours.',
-        media: null
-      }
-    }
-  },
-  'gdpr_compliance': {
-    media: { type: 'image', id: '', caption: 'GDPR Compliance' },
-    tagline: 'How we handle personal data in accordance with GDPR regulations.',
-    bullets: [
-      'Only collect data necessary for the task',
-      'Never share personal data with unauthorized parties',
-      'Report data breaches within 72 hours',
-      'Complete annual GDPR training'
-    ],
-    bulletDetails: {
-      'Only collect data necessary for the task': {
-        title: 'Data Minimization',
-        body: 'Under GDPR Article 5, you may only collect personal data that is strictly necessary for the specific purpose. Do not collect additional fields "just in case." Review your data collection forms regularly.',
-        media: { type: 'audio', id: '', caption: 'Audio overview — NotebookLM' }
-      },
-      'Never share personal data with unauthorized parties': {
-        title: 'Unauthorized Data Sharing',
-        body: 'Personal data must only be shared with parties listed in our Data Processing Agreements (DPAs). Sharing data with a third party not covered by a DPA is a GDPR violation and must be reported immediately.',
-        media: null
-      },
-      'Report data breaches within 72 hours': {
-        title: '72-Hour Breach Notification',
-        body: 'GDPR requires that personal data breaches be reported to the supervisory authority within 72 hours of discovery. Report any suspected breach immediately to your manager and to security@company.com.',
-        media: null
-      },
-      'Complete annual GDPR training': {
-        title: 'Annual GDPR Training',
-        body: 'All employees who handle personal data must complete GDPR training annually. Training is available on the learning management system. Failure to complete training by the deadline may result in access restrictions.',
-        media: { type: 'youtube', id: '', caption: 'Watch: GDPR training video' }
-      }
-    }
-  },
-  'internal_communication': {
-    media: { type: 'image', id: '', caption: 'Internal Communication' },
-    tagline: 'Guidelines for professional and effective internal communication.',
-    bullets: [
-      'Use approved communication tools only',
-      'Keep sensitive info off personal channels',
-      'Respond to messages within one business day',
-      'Escalate issues through proper channels'
-    ],
-    bulletDetails: {
-      'Use approved communication tools only': {
-        title: 'Approved Communication Tools',
-        body: 'Company business must only be conducted via approved tools: Microsoft Teams, company email, and the project management platform. Do not use personal WhatsApp, Telegram, or social media for work discussions.',
-        media: { type: 'audio', id: '', caption: 'Audio overview — NotebookLM' }
-      },
-      'Keep sensitive info off personal channels': {
-        title: 'No Sensitive Data on Personal Channels',
-        body: 'Never send passwords, personal data, financial information, or confidential documents via personal email or messaging apps. Always use company-approved encrypted channels.',
-        media: null
-      },
-      'Respond to messages within one business day': {
-        title: 'Response Time Expectation',
-        body: 'All internal messages should receive a response within one business day. If you are unavailable, set an out-of-office notification. Urgent matters should be escalated via phone or in person.',
-        media: null
-      },
-      'Escalate issues through proper channels': {
-        title: 'Escalation Channels',
-        body: 'Raise issues to your direct manager first. If unresolved, escalate to the department head. HR issues may be raised directly with HR at any time. Do not bypass the chain of command without cause.',
-        media: null
-      }
-    }
-  },
-  'lead_generation': {
-    media: { type: 'image', id: '', caption: 'Lead Generation' },
-    tagline: 'Guidelines for identifying and engaging potential customers effectively.',
-    bullets: [
-      'Use only approved CRM tools for lead tracking',
-      'Do not contact leads via personal accounts',
-      'Follow data privacy rules when handling lead data',
-      'All leads must be logged within 24 hours'
-    ],
-    bulletDetails: {
-      'Use only approved CRM tools for lead tracking': {
-        title: 'Approved CRM Tools',
-        body: 'All leads must be tracked in the company CRM (Salesforce). Do not maintain separate spreadsheets or personal databases of leads. This ensures data accuracy and compliance with GDPR.',
-        media: { type: 'audio', id: '', caption: 'Audio overview — NotebookLM' }
-      },
-      'Do not contact leads via personal accounts': {
-        title: 'No Personal Account Outreach',
-        body: 'All outreach to leads must come from your company email address. Using personal accounts for lead outreach violates our data processing policies and may expose the company to legal risk.',
-        media: null
-      },
-      'Follow data privacy rules when handling lead data': {
-        title: 'Lead Data Privacy',
-        body: 'Lead data is personal data under GDPR. Only collect information relevant to the sales process. Obtain consent before adding leads to marketing lists. Never sell or share lead data externally.',
-        media: null
-      },
-      'All leads must be logged within 24 hours': {
-        title: '24-Hour Lead Logging Rule',
-        body: 'Every new lead interaction must be logged in the CRM within 24 hours. This ensures pipeline accuracy and allows management to track progress. Late logging may result in lead reassignment.',
-        media: null
-      }
-    }
-  },
-  'guiding_statements': {
-    media: { type: 'image', id: '', caption: 'Guiding Statements' },
-    tagline: 'The core statements that guide how we sell and represent the company.',
-    bullets: [
-      'Lead with value, not features',
-      'Understand the customer problem first',
-      'Use approved messaging and positioning',
-      'Always represent the brand professionally'
-    ],
-    bulletDetails: {
-      'Lead with value, not features': {
-        title: 'Value-First Selling',
-        body: 'Customers buy outcomes, not features. Start every conversation by understanding the business problem and then connect our solution to the value it creates for their specific situation.',
-        media: { type: 'audio', id: '', caption: 'Audio overview — NotebookLM' }
-      },
-      'Understand the customer problem first': {
-        title: 'Problem Discovery',
-        body: 'Before presenting any solution, invest time in discovery. Ask open-ended questions, listen actively, and confirm your understanding before moving to a pitch. A misdiagnosed problem leads to a lost deal.',
-        media: null
-      },
-      'Use approved messaging and positioning': {
-        title: 'Approved Messaging',
-        body: 'All external-facing messaging must align with the approved sales deck and positioning documents. Do not create your own claims or comparisons with competitors. Contact Marketing for custom materials.',
-        media: null
-      },
-      'Always represent the brand professionally': {
-        title: 'Brand Representation',
-        body: 'You are the face of the company in every customer interaction. Maintain professionalism in all written and verbal communication. Refer to the Brand Guidelines document for tone, language, and visual standards.',
-        media: null
-      }
-    }
-  },
-  'sales_calls': {
-    media: { type: 'image', id: '', caption: 'Conducting Sales Calls' },
-    tagline: 'Best practices for conducting effective and professional sales calls.',
-    bullets: [
-      'Prepare an agenda before every call',
-      'Listen more than you speak',
-      'Document outcomes in CRM immediately after',
-      'Follow up within 24 hours'
-    ],
-    bulletDetails: {
-      'Prepare an agenda before every call': {
-        title: 'Pre-Call Preparation',
-        body: 'Send a brief agenda to the prospect at least 2 hours before the call. Include the purpose, topics to cover, and expected duration. Research the prospect\'s company and recent news before joining.',
-        media: { type: 'audio', id: '', caption: 'Audio overview — NotebookLM' }
-      },
-      'Listen more than you speak': {
-        title: 'Active Listening',
-        body: 'Aim for a 60/40 ratio — the prospect should speak 60% of the time. Ask follow-up questions, paraphrase to confirm understanding, and never interrupt. The more they talk, the more you learn.',
-        media: null
-      },
-      'Document outcomes in CRM immediately after': {
-        title: 'Post-Call CRM Logging',
-        body: 'Log call notes, next steps, and any commitments made within 30 minutes of ending the call. Include the date, attendees, key takeaways, and agreed follow-up actions in the CRM opportunity record.',
-        media: null
-      },
-      'Follow up within 24 hours': {
-        title: '24-Hour Follow-Up',
-        body: 'Send a follow-up email within 24 hours summarizing what was discussed, confirming next steps, and attaching any promised materials. Delayed follow-up is one of the top reasons deals are lost.',
-        media: null
-      }
-    }
-  },
-  'creating_proposals': {
-    media: { type: 'image', id: '', caption: 'Creating Proposals' },
-    tagline: 'How to build compelling, accurate, and approved sales proposals.',
-    bullets: [
-      'Use the approved proposal template only',
-      'Get pricing approved before sending',
-      'Tailor the proposal to the client\'s needs',
-      'Have a manager review before sending'
-    ],
-    bulletDetails: {
-      'Use the approved proposal template only': {
-        title: 'Proposal Template',
-        body: 'All proposals must use the current approved template available in the Sales Drive folder. Do not create proposals from scratch or use outdated versions. Contact Sales Ops if you need a customized format.',
-        media: { type: 'audio', id: '', caption: 'Audio overview — NotebookLM' }
-      },
-      'Get pricing approved before sending': {
-        title: 'Pricing Approval',
-        body: 'Any pricing included in a proposal must be reviewed and approved by your Sales Manager before it is sent to the client. Unapproved pricing commits the company to terms that may not be viable.',
-        media: null
-      },
-      'Tailor the proposal to the client\'s needs': {
-        title: 'Client-Specific Tailoring',
-        body: 'Replace all placeholder text with client-specific details. Reference the pain points and goals discussed during discovery. A generic proposal signals low effort and reduces win rates significantly.',
-        media: null
-      },
-      'Have a manager review before sending': {
-        title: 'Manager Review',
-        body: 'Submit your completed proposal to your manager at least 4 business hours before the intended send time. Allow time for revisions. Proposals sent without review are a policy violation.',
-        media: null
-      }
-    }
-  },
-  'sales_objections': {
-    media: { type: 'image', id: '', caption: 'Sales Objections' },
-    tagline: 'How to handle common objections professionally and effectively.',
-    bullets: [
-      'Acknowledge the concern before responding',
-      'Use approved objection-handling scripts',
-      'Never make promises outside your authority',
-      'Escalate complex objections to your manager'
-    ],
-    bulletDetails: {
-      'Acknowledge the concern before responding': {
-        title: 'Acknowledge First',
-        body: 'When a prospect raises an objection, always acknowledge it before responding: "That\'s a fair concern" or "I understand why you\'d think that." This disarms defensiveness and builds trust before you address the issue.',
-        media: { type: 'audio', id: '', caption: 'Audio overview — NotebookLM' }
-      },
-      'Use approved objection-handling scripts': {
-        title: 'Objection-Handling Scripts',
-        body: 'The Sales Playbook contains approved responses to the 10 most common objections (price, timing, competitor, no budget, etc.). Familiarize yourself with these scripts and practice them regularly with your team.',
-        media: null
-      },
-      'Never make promises outside your authority': {
-        title: 'Stay Within Your Authority',
-        body: 'Do not promise custom features, special pricing, extended payment terms, or SLA exceptions without explicit written approval from the relevant department head. Unauthorized promises create legal and operational problems.',
-        media: null
-      },
-      'Escalate complex objections to your manager': {
-        title: 'Escalating Complex Objections',
-        body: 'If an objection involves legal, technical, or pricing complexity beyond your authority, say: "That\'s a great question — let me bring in the right person to give you a complete answer." Then loop in your manager or technical specialist.',
-        media: null
-      }
-    }
-  },
-  'faqs': {
-    media: { type: 'image', id: '', caption: 'FAQs' },
-    tagline: 'Answers to the most commonly asked questions from employees.',
-    bullets: [
-      'Covers HR, IT, Finance, and Operations',
-      'Updated regularly by each department',
-      'Can\'t find your answer? Contact HR directly',
-      'Submit new FAQ suggestions to your manager'
-    ],
-    bulletDetails: {
-      'Covers HR, IT, Finance, and Operations': {
-        title: 'FAQ Coverage Areas',
-        body: 'This FAQ covers the four main areas employees ask about most: HR (leave, benefits, onboarding), IT (access, equipment, software), Finance (expenses, payroll, reimbursements), and Operations (facilities, travel, procurement).',
-        media: { type: 'audio', id: '', caption: 'Audio overview — NotebookLM' }
-      },
-      'Updated regularly by each department': {
-        title: 'FAQ Update Cycle',
-        body: 'Each department reviews and updates their FAQ section quarterly. If you notice outdated information, flag it to your department head. The most recent update date is shown at the top of each section.',
-        media: null
-      },
-      'Can\'t find your answer? Contact HR directly': {
-        title: 'Contact HR',
-        body: 'If your question is not answered in the FAQ, contact HR directly at hr@company.com or visit the HR portal on the intranet. Response time is within one business day for general inquiries.',
-        media: null
-      },
-      'Submit new FAQ suggestions to your manager': {
-        title: 'Suggest a New FAQ',
-        body: 'If you have a question that you think others would benefit from knowing the answer to, submit it to your manager. They will pass it on to the relevant department to consider adding to the FAQ.',
-        media: null
-      }
-    }
+// ===========================
+// POLICY META
+// Loaded from Google Sheet via Code.gs
+// DO NOT hardcode here — edit via Sheet:
+// https://docs.google.com/spreadsheets/d/1VZy3i_uRU__VQkR11xdQtP9KUSi3jF8ow-dg6eHqQuU
+// ===========================
+
+// ===========================
+// SAFE INIT GATE
+// Waits for BOTH:
+//   1. DOM ready
+//   2. POLICY_META loaded from Sheet
+// Whichever finishes last triggers initApp()
+// ===========================
+var _domReady  = false;
+var _metaReady = false;
+
+function _tryInit() {
+  if (_domReady && _metaReady) {
+    initApp();
   }
-};
+}
+
+var POLICY_META = {};
+
+google.script.run
+  .withSuccessHandler(function(meta) {
+    POLICY_META = meta;
+    _metaReady  = true;
+    _tryInit();
+  })
+  .withFailureHandler(function(err) {
+    console.error('getPolicyMeta FAILED:', err.message);
+  })
+  .getPolicyMeta();
+
+// ── ONE instance only ──────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  _domReady = true;
+  _tryInit();
+});
+
+// ===========================
+// INIT APP
+// Called only after POLICY_META
+// is loaded from Google Sheet
+// ===========================
+function initApp() {
+
+  // ── 1. Build search index ──────────────────────────────
+  SEARCH_INDEX = [];
+  Object.keys(POLICY_META).forEach(function(docKey) {
+    var meta  = POLICY_META[docKey];
+    var label = NAV_LABELS[docKey] || docKey;
+
+    SEARCH_INDEX.push({
+      type:    'policy',
+      docKey:  docKey,
+      label:   label,
+      preview: meta.tagline || '',
+      search:  [label, meta.tagline].join(' ').toLowerCase()
+    });
+
+    var details = meta.bulletDetails || {};
+    Object.keys(details).forEach(function(bulletText) {
+      var detail = details[bulletText];
+      SEARCH_INDEX.push({
+        type:    'bullet',
+        docKey:  docKey,
+        label:   label,
+        title:   detail.title,
+        preview: detail.body ? detail.body.substring(0, 100) + '...' : '',
+        media:   detail.media || null,
+        search:  [bulletText, detail.title, detail.body].join(' ').toLowerCase()
+      });
+    });
+  });
+
+  // ── 2. Preload videos silently ─────────────────────────
+  Object.keys(POLICY_META).forEach(function(docKey) {
+    var details = POLICY_META[docKey].bulletDetails || {};
+    Object.keys(details).forEach(function(bulletText) {
+      var media = details[bulletText].media;
+      if (!media) return;
+
+      var videoMedia = (media.video && media.video.type === 'gdrive-video') ? media.video : null;
+      if (!videoMedia && media.type === 'gdrive-video') videoMedia = media;
+
+      if (videoMedia && videoMedia.id && !_videoCache[videoMedia.id]) {
+        (function(fileId) {
+          google.script.run
+            .withSuccessHandler(function(dataUrl) { _videoCache[fileId] = dataUrl; })
+            .withFailureHandler(function() {})
+            .getVideoBase64(fileId);
+        })(videoMedia.id);
+      }
+    });
+  });
+
+  // ── 3. Dismiss loading overlay ─────────────────────────
+  var overlay = document.getElementById('app-loading-overlay');
+  if (overlay) {
+    overlay.classList.add('hidden');
+    setTimeout(function() { overlay.style.display = 'none'; }, 300);
+  }
+}
 
 // ===========================
 // AUTH CHECK — CLIENT SIDE
@@ -521,13 +151,17 @@ function runAuthCheck() {
           // Single media
           if (m.type === 'gslides'      && m.id && !ids.slidesId) ids.slidesId = m.id;
           if (m.type === 'gdrive-video' && m.id && !ids.videoId)  ids.videoId  = m.id;
+          if (m.type === 'youtube'      && m.id && !ids.videoId)  ids.videoId  = m.id;
           if (m.type === 'audio'        && m.id && !ids.audioId)  ids.audioId  = m.id;
 
-          // Dual media
-          if (m.slides && m.slides.id && !ids.slidesId) ids.slidesId = m.slides.id;
-          if (m.video  && m.video.type === 'gdrive-video' && m.video.id && !ids.videoId) {
-            ids.videoId = m.video.id;
-          }
+        // Dual media
+        if (m.slides && m.slides.id && !ids.slidesId) ids.slidesId = m.slides.id;
+        if (m.video  && m.video.type === 'gdrive-video' && m.video.id && !ids.videoId) {
+          ids.videoId = m.video.id;
+        }
+        if (m.video  && m.video.type === 'youtube' && m.video.id && !ids.videoId) {
+          ids.videoId = m.video.id;
+        }
         });
       });
 
@@ -581,6 +215,9 @@ function runAuthCheck() {
     })
     .checkAuthStatus();
 }
+
+// Populated by initApp() after POLICY_META loads
+var SEARCH_INDEX = [];
 
 // ===========================
 // RENDER AUTH RESULT
@@ -686,19 +323,19 @@ function renderMediaBox(containerId, media) {
         '<iframe src="' + src + '" class="media-audio-frame" allow="autoplay"></iframe>' + caption;
       break;
 
-case 'gslides':
-  var hintId    = 'slides-hint-' + containerId;
-  var wrapperId = 'slides-wrapper-' + containerId;
-  box.innerHTML =
-    '<div class="slides-wrapper" id="' + wrapperId + '">' +
-      '<iframe src="' + src + '" allowfullscreen></iframe>' +
-      '<div class="slides-hint" id="' + hintId + '">' +
-        '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
-          '<polyline points="9 18 15 12 9 6"/>' +
-        '</svg>' +
-        '<span>Click to turn page</span>' +
-      '</div>' +
-    '</div>' + caption;
+    case 'gslides':
+      var hintId    = 'slides-hint-' + containerId;
+      var wrapperId = 'slides-wrapper-' + containerId;
+      box.innerHTML =
+        '<div class="slides-wrapper" id="' + wrapperId + '">' +
+          '<iframe src="' + src + '" allowfullscreen></iframe>' +
+          '<div class="slides-hint" id="' + hintId + '">' +
+            '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+              '<polyline points="9 18 15 12 9 6"/>' +
+            '</svg>' +
+            '<span>Click to turn page</span>' +
+          '</div>' +
+        '</div>' + caption;
 
   (function() {
     var hint    = document.getElementById(hintId);
@@ -719,6 +356,15 @@ case 'gslides':
   })();
   break;
 case 'gdrive-video':
+  // ===========================
+  // GCP MIGRATION NOTE
+  // When migrating to Cloud Storage:
+  //   1. getVideoBase64 returns a GCS URL instead of base64
+  //   2. Replace the <source src="..."> below with the URL directly
+  //   3. Remove the _videoCache check — browser caches GCS natively
+  //   4. Remove the preloader in DOMContentLoaded — no longer needed
+  //   See Code.gs getVideoBase64 for full migration steps.
+  // ===========================
   // ✅ Already cached — render instantly
   if (_videoCache[media.id]) {
     box.innerHTML =
@@ -771,41 +417,6 @@ case 'gdrive-video':
 }
 
 // ===========================
-// PAGE LOAD VIDEO PRELOADER
-// Scans all bulletDetails on load
-// and silently caches any gdrive-video
-// so Video tab is instant on first click
-// ===========================
-document.addEventListener('DOMContentLoaded', function() {
-  Object.keys(POLICY_META).forEach(function(docKey) {
-    var details = POLICY_META[docKey].bulletDetails || {};
-    Object.keys(details).forEach(function(bulletText) {
-      var media = details[bulletText].media;
-      if (!media) return;
-
-      // ── Dual media — video branch ───────────────────
-      var videoMedia = (media.video && media.video.type === 'gdrive-video') ? media.video : null;
-
-      // ── Single media ────────────────────────────────
-      if (!videoMedia && media.type === 'gdrive-video') videoMedia = media;
-
-      if (videoMedia && videoMedia.id && !_videoCache[videoMedia.id]) {
-        (function(fileId) {
-          google.script.run
-            .withSuccessHandler(function(dataUrl) {
-              _videoCache[fileId] = dataUrl;  // ✅ silently cached on page load
-            })
-            .withFailureHandler(function() {
-              // ✅ silent fail — loading state handles it at render time
-            })
-            .getVideoBase64(fileId);
-        })(videoMedia.id);
-      }
-    });
-  });
-});
-
-// ===========================
 // BULLET CLICK → MODAL
 // ===========================
 function renderBullets(docKey) {
@@ -848,7 +459,16 @@ function buildMediaSrc(media) {
     case 'audio':
       return 'https://drive.google.com/file/d/' + media.id + '/preview';
     case 'youtube':
-      return 'https://www.youtube.com/embed/' + media.id;
+      var ytId = media.id;
+      // Strip full URL if accidentally pasted
+      if (ytId.indexOf('youtube.com/watch') !== -1) {
+        var match = ytId.match(/[?&]v=([^&]+)/);
+        if (match) ytId = match[1];
+      } else if (ytId.indexOf('youtu.be/') !== -1) {
+        ytId = ytId.split('youtu.be/')[1].split('?')[0];
+      }
+      return 'https://www.youtube.com/embed/' + ytId +
+       '?autoplay=1&mute=1&rel=0&modestbranding=1&controls=1&playsinline=1&iv_load_policy=3';
     case 'vimeo':
       return 'https://player.vimeo.com/video/' + media.id;
     case 'gslides':
@@ -1035,17 +655,32 @@ function loadPolicy(event, docKey, label) {
   renderMediaBox('policy-media-content', meta.media || null);
 
   // --- CONTAINER 2: Fetch from Google Docs via Apps Script ---
-  var fullContent = document.getElementById('policy-full-content');
-  fullContent.innerHTML = '<span class="doc-loading">Loading document...</span>';
+var fullContent = document.getElementById('policy-full-content');
+fullContent.innerHTML = '<span class="doc-loading">Loading document...</span>';
 
-  google.script.run
-    .withSuccessHandler(function(html) {
-      fullContent.innerHTML = html;  // innerHTML — renders formatting
-    })
-    .withFailureHandler(function(err) {
-      fullContent.innerHTML = '<span class="doc-error">Failed to load: ' + err.message + '</span>';
-    })
-    .getDocContent(docKey);
+google.script.run
+  .withSuccessHandler(function(result) {
+    if (result.type === 'error') {
+      fullContent.innerHTML =
+        '<span class="doc-error">' + result.message + '</span>';
+      return;
+    }
+
+    fullContent.innerHTML =
+      '<div class="doc-embed-wrapper">' +
+        '<iframe ' +
+          'src="' + result.url + '" ' +
+          'class="doc-embed-frame" ' +
+          'allowfullscreen ' +
+          'loading="lazy"' +
+        '></iframe>' +
+      '</div>';
+  })
+  .withFailureHandler(function(err) {
+    fullContent.innerHTML =
+      '<span class="doc-error">Failed to load: ' + err.message + '</span>';
+  })
+  .getDocContent(docKey);
 
   // Track in recently viewed
   addToRecentlyViewed(docKey, label);
@@ -1142,39 +777,6 @@ var NAV_LABELS = {
   'faqs':                   'FAQs'
 };
 
-// Build flat searchable index from POLICY_META
-var SEARCH_INDEX = [];
-
-(function buildIndex() {
-  Object.keys(POLICY_META).forEach(function(docKey) {
-    var meta   = POLICY_META[docKey];
-    var label  = NAV_LABELS[docKey] || docKey;
-
-    // ── Top-level policy entry ──────────────────────────
-    SEARCH_INDEX.push({
-      type:    'policy',
-      docKey:  docKey,
-      label:   label,
-      preview: meta.tagline || '',
-      search:  [label, meta.tagline].join(' ').toLowerCase()
-    });
-
-    // ── Each bullet + its detail ────────────────────────
-    var details = meta.bulletDetails || {};
-    Object.keys(details).forEach(function(bulletText) {
-      var detail = details[bulletText];
-      SEARCH_INDEX.push({
-        type:    'bullet',
-        docKey:  docKey,
-        label:   label,
-        title:   detail.title,
-        preview: detail.body ? detail.body.substring(0, 100) + '...' : '',
-        media:   detail.media || null,
-        search:  [bulletText, detail.title, detail.body].join(' ').toLowerCase()
-      });
-    });
-  });
-})();
 
 // ===========================
 // RUN SEARCH
