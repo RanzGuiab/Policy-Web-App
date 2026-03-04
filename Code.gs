@@ -1,128 +1,28 @@
-// ============================================================
-// DOCUMENT ID MAP
-// ============================================================
-// Maps each policy key (docKey) to its Google Doc ID.
-//
-// How to find a Google Doc ID:
-//   Open the doc in Google Docs
-//   Copy the ID from the URL:
-//   https://docs.google.com/document/d/[DOC_ID_HERE]/edit
-//
-// Rules:
-//   - Key MUST match a key in POLICY_META (app.html)
-//   - Key MUST match a key in NAV_LABELS  (app.html)
-//   - Each policy should ideally have its own unique Doc ID
-//   - Duplicate IDs are allowed during development (placeholder)
-//
-// To add a new policy:
-//   1. Create a Google Doc
-//   2. Copy its ID from the URL
-//   3. Add a new line here: 'your_policy_key': 'YOUR_DOC_ID'
-//   4. Add matching entry to POLICY_META in app.html
-//   5. Add matching entry to NAV_LABELS  in app.html
-//   6. Add matching nav item in Index.html sidebar
-// ============================================================
-// var DOCS = {
-
-//   // ── Section 1: Company Overview ──────────────────────────
-//   // Each key has its own dedicated Google Doc
-//   'purpose_background':     '1NIzp3NnbLmHowI3cQMXciXqEgedB7Jc2arsnujDjzMk',
-
-//   // ⚠️ Below entries share a placeholder Doc ID
-//   // TODO: Replace each with its own dedicated Google Doc ID
-//   'company_history':        '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-//   'team_structure':         '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-//   'types_of_content':       '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-
-//   // ── Section 2: Security & Compliance ─────────────────────
-//   // TODO: Replace with dedicated Doc IDs
-//   'office_security':        '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-//   'gdpr_compliance':        '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-//   'internal_communication': '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-
-//   // ── Section 3: Sales Playbook ─────────────────────────────
-//   // TODO: Replace with dedicated Doc IDs
-//   'lead_generation':        '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-//   'guiding_statements':     '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-//   'sales_calls':            '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-//   'creating_proposals':     '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-//   'sales_objections':       '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-
-//   // ── Section 4: General Reference ─────────────────────────
-//   // TODO: Replace with dedicated Doc ID
-//   'faqs':                   '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI'
-// };
-// ===========================
-// DOC ID CONFIG MAP
-// ===========================
-var DOCS = {
-  'purpose_background':     '1NIzp3NnbLmHowI3cQMXciXqEgedB7Jc2arsnujDjzMk',
-  'company_history':        '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-  'team_structure':         '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-  'types_of_content':       '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-  'office_security':        '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-  'gdpr_compliance':        '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-  'internal_communication': '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-  'lead_generation':        '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-  'guiding_statements':     '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-  'sales_calls':            '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-  'creating_proposals':     '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-  'sales_objections':       '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI',
-  'faqs':                   '1YpyRZ5Te_3TbCB5GJLXB3DG8oeez8wEkYTWKaRKgIHI'
-};
-
-function debugGetPolicyMeta() {
-  var ss = SpreadsheetApp.openById('1VZy3i_uRU__VQkR11xdQtP9KUSi3jF8ow-dg6eHqQuU');
-  
-  // ── Check sheet names ──────────────────────────────────
-  var sheets = ss.getSheets().map(function(s) { return s.getName(); });
-  Logger.log('Sheet tabs found: ' + JSON.stringify(sheets));
-
-  // ── Check Policies tab ─────────────────────────────────
-  var policiesSheet = ss.getSheetByName('Policies');
-  if (!policiesSheet) {
-    Logger.log('ERROR: No tab named "Policies" — check exact name');
-    return;
-  }
-  var pRows = policiesSheet.getDataRange().getValues();
-  Logger.log('Policies rows: ' + pRows.length);
-  Logger.log('Policies row 0 (headers): ' + JSON.stringify(pRows[0]));
-  Logger.log('Policies row 1 (first data): ' + JSON.stringify(pRows[1]));
-
-  // ── Check Bullets tab ──────────────────────────────────
-  var bulletsSheet = ss.getSheetByName('Bullets');
-  if (!bulletsSheet) {
-    Logger.log('ERROR: No tab named "Bullets" — check exact name');
-    return;
-  }
-  var bRows = bulletsSheet.getDataRange().getValues();
-  Logger.log('Bullets rows: ' + bRows.length);
-  Logger.log('Bullets row 0 (headers): ' + JSON.stringify(bRows[0]));
-  Logger.log('Bullets row 1 (first data): ' + JSON.stringify(bRows[1]));
-
-  // ── Check BulletDetails tab ────────────────────────────
-  var detailsSheet = ss.getSheetByName('BulletDetails');
-  if (!detailsSheet) {
-    Logger.log('ERROR: No tab named "BulletDetails" — check exact name');
-    return;
-  }
-  var dRows = detailsSheet.getDataRange().getValues();
-  Logger.log('BulletDetails rows: ' + dRows.length);
-  Logger.log('BulletDetails row 0 (headers): ' + JSON.stringify(dRows[0]));
-  Logger.log('BulletDetails row 1 (first data): ' + JSON.stringify(dRows[1]));
-
-  // ── Run actual getPolicyMeta and log result ────────────
-  var result = getPolicyMeta();
-  var keys   = Object.keys(result);
-  Logger.log('getPolicyMeta keys returned: ' + keys.length);
-  Logger.log('First key: ' + keys[0]);
-  Logger.log('First value: ' + JSON.stringify(result[keys[0]]));
-}
+// CODE.GS
 
 // ===========================
 // SHEET CONFIG
 // ===========================
-var SHEET_ID = '1VZy3i_uRU__VQkR11xdQtP9KUSi3jF8ow-dg6eHqQuU';
+var SHEET_ID = '1VZy3i_uRU__VQkR11xdQtP9KUSi3jF8ow-dg6eHqQuU'; // appsscript.json handles AuthN after forcing it on Handover.
+
+function getSheet() {
+  return SpreadsheetApp.openById(SHEET_ID);
+}
+
+function getDocs() {
+  var rows  = getSheet().getSheetByName('Docs').getDataRange().getValues();
+  var docs  = {};
+
+  for (var i = 1; i < rows.length; i++) {
+    var docKey = rows[i][0];
+    var docId  = rows[i][1];
+    if (docKey && docId) {
+      docs[docKey] = docId;
+    }
+  }
+
+  return docs;
+}
 
 // ===========================
 // GET POLICY META FROM SHEET
@@ -131,23 +31,18 @@ var SHEET_ID = '1VZy3i_uRU__VQkR11xdQtP9KUSi3jF8ow-dg6eHqQuU';
 // in shape to the hardcoded version in app.html
 // ===========================
 function getPolicyMeta() {
-  var ss             = SpreadsheetApp.openById(SHEET_ID);
-  var policiesSheet  = ss.getSheetByName('Policies');
-  var bulletsSheet   = ss.getSheetByName('Bullets');
-  var detailsSheet   = ss.getSheetByName('BulletDetails');
+  var ss = getSheet();
 
-  // ── Read all rows ───────────────────────────────────────
-  var policies = policiesSheet.getDataRange().getValues();
-  var bullets  = bulletsSheet.getDataRange().getValues();
-  var details  = detailsSheet.getDataRange().getValues();
+  var policies = ss.getSheetByName('Policies').getDataRange().getValues();
+  var bullets  = ss.getSheetByName('Bullets').getDataRange().getValues();
+  var details  = ss.getSheetByName('BulletDetails').getDataRange().getValues();
 
-  // ── Skip header row (row 0) ─────────────────────────────
   var meta = {};
 
   // ── 1. Build base policy entries ────────────────────────
   for (var i = 1; i < policies.length; i++) {
-    var row      = policies[i];
-    var docKey   = row[0].toString().trim();
+    var row    = policies[i];
+    var docKey = row[0].toString().trim();
     if (!docKey) continue;
 
     meta[docKey] = {
@@ -163,7 +58,6 @@ function getPolicyMeta() {
   }
 
   // ── 2. Populate bullets (sorted by order col) ───────────
-  // Col: A=docKey B=bulletText C=order
   var bulletRows = [];
   for (var i = 1; i < bullets.length; i++) {
     var row = bullets[i];
@@ -177,15 +71,10 @@ function getPolicyMeta() {
   bulletRows.sort(function(a, b) { return a.order - b.order; });
 
   bulletRows.forEach(function(b) {
-    if (meta[b.docKey]) {
-      meta[b.docKey].bullets.push(b.text);
-    }
+    if (meta[b.docKey]) meta[b.docKey].bullets.push(b.text);
   });
 
   // ── 3. Populate bulletDetails ────────────────────────────
-  // Col: A=docKey B=bulletText C=title D=body
-  //      E=mediaType F=mediaId G=mediaCaption
-  //      H=mediaDefault I=slidesId J=videoId K=videoType
   for (var i = 1; i < details.length; i++) {
     var row        = details[i];
     var docKey     = row[0].toString().trim();
@@ -193,54 +82,25 @@ function getPolicyMeta() {
     if (!docKey || !bulletText) continue;
     if (!meta[docKey])          continue;
 
-    var title      = row[2].toString().trim();
-    var body       = row[3].toString().trim();
-    var mediaType  = row[4].toString().trim();
-    var mediaId    = row[5].toString().trim();
-    var mediaCap   = row[6].toString().trim();
-    var mediaDef   = row[7].toString().trim();  // 'slides' or 'video'
-    var slidesId   = row[8].toString().trim();
-    var videoId    = row[9].toString().trim();
-    var videoType  = row[10].toString().trim(); // 'gdrive-video' etc
-
-    // ── Build media object ─────────────────────────────
-    var media = null;
+    var mediaType = row[4].toString().trim();
+    var mediaId   = row[5].toString().trim();
+    var media     = null;
 
     if (mediaType === 'dual') {
-      // Has both slides + video tabs
       media = {
-        default: mediaDef || 'slides',
-        slides: {
-          type:    'gslides',
-          id:      slidesId,
-          caption: ''
-        },
-        video: {
-          type:    videoType || 'gdrive-video',
-          id:      videoId,
-          caption: ''
-        }
+        default: row[7].toString().trim() || 'slides',
+        slides:  { type: 'gslides',              id: row[8].toString().trim(),  caption: '' },
+        video:   { type: row[10].toString().trim() || 'gdrive-video', id: row[9].toString().trim(), caption: '' }
       };
     } else if (mediaType && mediaId) {
-      // Single media type
-      media = {
-        type:    mediaType,
-        id:      mediaId,
-        caption: mediaCap
-      };
+      media = { type: mediaType, id: mediaId,   caption: row[6].toString().trim() };
     } else if (mediaType && !mediaId) {
-      // Type set but no ID (e.g. placeholder audio)
-      media = {
-        type:    mediaType,
-        id:      '',
-        caption: mediaCap
-      };
+      media = { type: mediaType, id: '',         caption: row[6].toString().trim() };
     }
-    // else: media stays null
 
     meta[docKey].bulletDetails[bulletText] = {
-      title: title,
-      body:  body,
+      title: row[2].toString().trim(),
+      body:  row[3].toString().trim(),
       media: media
     };
   }
@@ -258,72 +118,73 @@ function getPolicyMeta() {
 //     .checkAuthStatus();
 // Or trigger via the admin Check Auth button.
 // ===========================
-function checkAuthStatus() {
-  var status = {
-    timestamp: new Date().toISOString(),
-    overall:   true,
-    services:  {}
-  };
+// function checkAuthStatus() {
+//   var status = {
+//     timestamp: new Date().toISOString(),
+//     overall:   true,
+//     services:  {}
+//   };
 
-  // ── 1. Session ───────────────────────────────────────────
-  try {
-    var email = Session.getActiveUser().getEmail();
-    status.services.session = {
-      ok:      true,
-      message: 'Authenticated as: ' + (email || '(hidden by domain policy)')
-    };
-  } catch(e) {
-    status.services.session = { ok: false, message: e.message };
-    status.overall = false;
-  }
+//   // ── 1. Session ───────────────────────────────────────────
+//   try {
+//     var email = Session.getActiveUser().getEmail();
+//     status.services.session = {
+//       ok:      true,
+//       message: 'Authenticated as: ' + (email || '(hidden by domain policy)')
+//     };
+//   } catch(e) {
+//     status.services.session = { ok: false, message: e.message };
+//     status.overall = false;
+//   }
 
-  // ── 2. Google Drive ──────────────────────────────────────
-  try {
-    DriveApp.getFiles().hasNext();
-    status.services.drive = { ok: true, message: 'DriveApp accessible' };
-  } catch(e) {
-    status.services.drive = { ok: false, message: e.message };
-    status.overall = false;
-  }
+//   // ── 2. Google Drive ──────────────────────────────────────
+//   try {
+//     DriveApp.getFiles().hasNext();
+//     status.services.drive = { ok: true, message: 'DriveApp accessible' };
+//   } catch(e) {
+//     status.services.drive = { ok: false, message: e.message };
+//     status.overall = false;
+//   }
 
-  // ── 3. Google Docs — test first real Doc ID ──────────────
-  try {
-    var firstKey = Object.keys(DOCS)[0];
-    var firstId  = DOCS[firstKey];
-    var docName  = DocumentApp.openById(firstId).getName();
-    status.services.docs = {
-      ok:      true,
-      message: 'Connected — "' + docName + '" (' + firstKey + ')'
-    };
-  } catch(e) {
-    status.services.docs = { ok: false, message: e.message };
-    status.overall = false;
-  }
+//   // ── 3. Google Docs — test first real Doc ID ──────────────
+//   try {
+//     var docs     = getDocs();
+//     var firstKey = Object.keys(docs)[0];
+//     var firstId  = docs[firstKey];
+//     var docName  = DocumentApp.openById(firstId).getName();
+//     status.services.docs = {
+//       ok:      true,
+//       message: 'Connected — "' + docName + '" (' + firstKey + ')'
+//     };
+//   } catch(e) {
+//     status.services.docs = { ok: false, message: e.message };
+//     status.overall = false;
+//   }
 
-  // ── 4. HtmlService ───────────────────────────────────────
-  try {
-    HtmlService.createHtmlOutput('<p>test</p>');
-    status.services.htmlService = { ok: true, message: 'HtmlService available' };
-  } catch(e) {
-    status.services.htmlService = { ok: false, message: e.message };
-    status.overall = false;
-  }
+//   // ── 4. HtmlService ───────────────────────────────────────
+//   try {
+//     HtmlService.createHtmlOutput('<p>test</p>');
+//     status.services.htmlService = { ok: true, message: 'HtmlService available' };
+//   } catch(e) {
+//     status.services.htmlService = { ok: false, message: e.message };
+//     status.overall = false;
+//   }
 
-  // ── 5. Doc ID coverage ───────────────────────────────────
-  var missingDocs = [];
-  Object.keys(DOCS).forEach(function(key) {
-    if (!DOCS[key] || DOCS[key].trim() === '') missingDocs.push(key);
-  });
-  status.services.docIds = {
-    ok:      missingDocs.length === 0,
-    message: missingDocs.length === 0
-      ? 'All ' + Object.keys(DOCS).length + ' doc IDs configured'
-      : 'Missing IDs for: ' + missingDocs.join(', ')
-  };
-  if (missingDocs.length > 0) status.overall = false;
+//   // ── 5. Doc ID coverage ───────────────────────────────────
+//   var missingDocs = [];
+//   Object.keys(DOCS).forEach(function(key) {
+//     if (!DOCS[key] || DOCS[key].trim() === '') missingDocs.push(key);
+//   });
+//   status.services.docIds = {
+//     ok:      missingDocs.length === 0,
+//     message: missingDocs.length === 0
+//       ? 'All ' + Object.keys(DOCS).length + ' doc IDs configured'
+//       : 'Missing IDs for: ' + missingDocs.join(', ')
+//   };
+//   if (missingDocs.length > 0) status.overall = false;
 
-  return status;
-}
+//   return status;
+// }
 
 // ===========================
 // MEDIA ID CHECK
@@ -421,11 +282,6 @@ function forceAuth() {
    Logger.log('Auth OK: ' + test.getResponseCode());
 }
 
-function doGet() {
-  return HtmlService.createHtmlOutputFromFile('Index')
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL); // Allows embedding
-}
-
 // ===========================
 // SERVE WEB APP
 // ===========================
@@ -449,15 +305,29 @@ function include(filename) {
 // bullet lists, numbered lists, spacing
 // ===========================
 function getDocContent(docKey) {
-  var docId = DOCS[docKey];
+
+  // ── Sanitize docKey — alphanumeric + underscore only ──
+  var safeKey = String(docKey).replace(/[^a-zA-Z0-9_]/g, '');
+  if (!safeKey) {
+    return { type: 'error', message: 'Invalid document key.' };
+  }
+
+  var docs  = getDocs();
+  var docId = docs[safeKey];
 
   if (!docId) {
-    return { type: 'error', message: 'No document configured for: ' + docKey };
+    return { type: 'error', message: 'No document configured for: ' + safeKey };
+  }
+
+  // ── Validate docId — Google Doc IDs are alphanumeric + hyphens only ──
+  var safeDocId = String(docId).replace(/[^a-zA-Z0-9_\-]/g, '');
+  if (!safeDocId || safeDocId !== docId) {
+    return { type: 'error', message: 'Invalid document ID in configuration.' };
   }
 
   return {
     type: 'embed',
-    url:  'https://docs.google.com/document/d/' + docId + '/preview'
+    url:  'https://docs.google.com/document/d/' + safeDocId + '/preview?rm=minimal'
   };
 }
 
@@ -581,136 +451,4 @@ function getVideoBase64(fileId) {
   var bytes = file.getBlob().getBytes();
   var b64   = Utilities.base64Encode(bytes);
   return 'data:video/mp4;base64,' + b64;
-}
-
-// ===========================
-// TABLE → HTML
-// ===========================
-
-// ===========================
-// TABLE → HTML
-// ===========================
-function convertTable(table) {
-  if (!table || !table.getNumRows) return '';
-  if (table.getNumRows() === 0)    return '';
-
-  // ✅ Detect 1-row 1-cell empty table = divider
-  if (table.getNumRows() === 1 && table.getRow(0).getNumCells() === 1) {
-    var cellText = table.getRow(0).getCell(0).getText().trim();
-    if (cellText === '') {
-      return '<hr class="doc-divider"/>';
-    }
-  }
-
-  // ── Normal table ─────────────────────────────────────────
-  var html = '<table style="width:100%;border-collapse:collapse;margin:12px 0;">';
-
-  for (var r = 0; r < table.getNumRows(); r++) {
-    var row = table.getRow(r);
-    html += '<tr>';
-
-    for (var c = 0; c < row.getNumCells(); c++) {
-      var cell     = row.getCell(c);
-      var cellText = convertInlineText(cell.getChild(0).asParagraph());
-      var isHeader = (r === 0);
-      var tag      = isHeader ? 'th' : 'td';
-      var style    = isHeader
-        ? 'padding:8px 12px;border:1px solid #e8ecf2;background:#f8faff;font-weight:700;font-size:13px;text-align:left;'
-        : 'padding:8px 12px;border:1px solid #e8ecf2;font-size:13px;';
-
-      html += '<' + tag + ' style="' + style + '">' + cellText + '</' + tag + '>';
-    }
-
-    html += '</tr>';
-  }
-
-  html += '</table>';
-  return html;
-}
-
-// ===========================
-// INLINE TEXT → HTML
-// Handles: bold, italic, underline,
-// strikethrough, font color, links
-// ===========================
-function convertInlineText(element) {
-  var html = '';
-
-  for (var i = 0; i < element.getNumChildren(); i++) {
-    var child = element.getChild(i);
-
-    // ✅ Skip horizontal rules — handled at paragraph level
-    if (child.getType() === DocumentApp.ElementType.HORIZONTAL_RULE) {
-      continue;
-    }
-
-    if (child.getType() === DocumentApp.ElementType.TEXT) {
-      var textEl  = child.asText();
-      var raw     = textEl.getText();
-      var indices = textEl.getTextAttributeIndices();
-
-      if (indices[indices.length - 1] !== raw.length) {
-        indices.push(raw.length);
-      }
-
-      for (var j = 0; j < indices.length - 1; j++) {
-        var start = indices[j];
-        var end   = indices[j + 1];
-        var chunk = escapeHtml(raw.substring(start, end));
-
-        var bold      = textEl.isBold(start);
-        var italic    = textEl.isItalic(start);
-        var underline = textEl.isUnderline(start);
-        var strike    = textEl.isStrikethrough(start);
-        var fgColor   = textEl.getForegroundColor(start);
-        var linkUrl   = textEl.getLinkUrl(start);
-
-        var styles = [];
-        if (bold)      styles.push('font-weight:700');
-        if (italic)    styles.push('font-style:italic');
-        if (underline) styles.push('text-decoration:underline');
-        if (strike)    styles.push('text-decoration:line-through');
-        if (fgColor)   styles.push('color:' + fgColor);
-
-        var styled = styles.length
-          ? '<span style="' + styles.join(';') + '">' + chunk + '</span>'
-          : chunk;
-
-        if (linkUrl) {
-          styled = '<a href="' + linkUrl + '" target="_blank" style="color:#2563eb;text-decoration:underline;">' + styled + '</a>';
-        }
-
-        html += styled;
-      }
-
-    } else if (child.getType() === DocumentApp.ElementType.INLINE_IMAGE) {
-      html += '<span style="color:#9ca3af;font-size:12px;">[image]</span>';
-    }
-  }
-
-  return html;
-}
-
-// ===========================
-// ALIGNMENT HELPER
-// ===========================
-function getAlignment(alignment) {
-  switch (alignment) {
-    case DocumentApp.HorizontalAlignment.CENTER: return 'text-align:center;';
-    case DocumentApp.HorizontalAlignment.RIGHT:  return 'text-align:right;';
-    case DocumentApp.HorizontalAlignment.JUSTIFY: return 'text-align:justify;';
-    default: return 'text-align:left;';
-  }
-}
-
-
-// ===========================
-// ESCAPE HTML SPECIAL CHARS
-// ===========================
-function escapeHtml(text) {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }

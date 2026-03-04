@@ -1,4 +1,5 @@
 <script>
+// APP.HTML
 // ===========================
 // POLICY META
 // Loaded from Google Sheet via Code.gs
@@ -475,8 +476,8 @@ function buildMediaSrc(media) {
       // ✅ all slides — user navigates freely
       return 'https://docs.google.com/presentation/d/' + media.id +
              '/embed?rm=minimal&start=false&loop=false';
-    case 'gdrive-video':
-      return 'https://drive.google.com/uc?export=view&id=' + media.id;
+  case 'gdrive-video':
+    return 'https://drive.google.com/file/d/' + media.id + '/preview';
     default:
       return null;
   }
@@ -707,19 +708,6 @@ document.querySelectorAll('.nav-group-header').forEach(function(header) {
   });
 });
 
-
-// ===========================
-// NAVBAR SEARCH — CMD+K
-// ===========================
-document.addEventListener('keydown', function(e) {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-    e.preventDefault();
-    var input = document.getElementById('searchInput');
-    if (input) input.focus();
-  }
-});
-
-
 // ===========================
 // MOBILE SIDEBAR TOGGLE
 // ===========================
@@ -938,6 +926,18 @@ document.addEventListener('DOMContentLoaded', function() {
     e.stopPropagation();
   }, { passive: false });
 });
+
+// ── Sanitize helper — strips all HTML tags and dangerous chars ──
+function sanitizeInput(str) {
+  return String(str)
+    .replace(/&/g,  '&amp;')
+    .replace(/</g,  '&lt;')
+    .replace(/>/g,  '&gt;')
+    .replace(/"/g,  '&quot;')
+    .replace(/'/g,  '&#x27;')
+    .replace(/\//g, '&#x2F;');
+}
+
 
 // ===========================
 // IMAGE ZOOM MODAL
