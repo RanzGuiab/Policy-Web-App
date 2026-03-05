@@ -3,17 +3,8 @@
 // ===========================
 // POLICY META
 // Loaded from Google Sheet via Code.gs
-// DO NOT hardcode here — edit via Sheet:
-// https://docs.google.com/spreadsheets/d/1VZy3i_uRU__VQkR11xdQtP9KUSi3jF8ow-dg6eHqQuU
 // ===========================
 
-// ===========================
-// SAFE INIT GATE
-// Waits for BOTH:
-//   1. DOM ready
-//   2. POLICY_META loaded from Sheet
-// Whichever finishes last triggers initApp()
-// ===========================
 var _domReady  = false;
 var _metaReady = false;
 
@@ -35,12 +26,6 @@ google.script.run
     console.error('getPolicyMeta FAILED:', err.message);
   })
   .getPolicyMeta();
-
-// ── ONE instance only ──────────────────────────────────
-document.addEventListener('DOMContentLoaded', function() {
-  _domReady = true;
-  _tryInit();
-});
 
 // ===========================
 // INIT APP
@@ -109,113 +94,110 @@ function initApp() {
 
 // ===========================
 // AUTH CHECK — CLIENT SIDE
-// ===========================
-// ===========================
-// AUTH CHECK — CLIENT SIDE
 // Phase 1: server checks Drive/Docs/Session
 // Phase 2: client extracts IDs from POLICY_META
 //          and sends to server for media checks
 // ===========================
-function runAuthCheck() {
-  var btn    = document.getElementById('auth-check-btn');
-  var output = document.getElementById('auth-check-output');
-  if (!btn || !output) return;
+// function runAuthCheck() {
+//   var btn    = document.getElementById('auth-check-btn');
+//   var output = document.getElementById('auth-check-output');
+//   if (!btn || !output) return;
 
-  btn.disabled         = true;
-  btn.textContent      = 'Checking...';
-  output.style.display = 'block';
-  output.innerHTML     =
-    '<div class="auth-check-row">' +
-      '<div class="video-loading-spinner" style="width:16px;height:16px;border-width:2px;margin-right:8px;display:inline-block;"></div>' +
-      '<span>Contacting Apps Script...</span>' +
-    '</div>';
+//   btn.disabled         = true;
+//   btn.textContent      = 'Checking...';
+//   output.style.display = 'block';
+//   output.innerHTML     =
+//     '<div class="auth-check-row">' +
+//       '<div class="video-loading-spinner" style="width:16px;height:16px;border-width:2px;margin-right:8px;display:inline-block;"></div>' +
+//       '<span>Contacting Apps Script...</span>' +
+//     '</div>';
 
-  // ── Phase 1: server auth check ───────────────────────────
-  google.script.run
-    .withSuccessHandler(function(result) {
+//   // ── Phase 1: server auth check ───────────────────────────
+//   google.script.run
+//     .withSuccessHandler(function(result) {
 
-      // ── Phase 2: extract media IDs from POLICY_META ──────
-      var ids = { slidesId: null, videoId: null, imageId: null, audioId: null };
+//       // ── Phase 2: extract media IDs from POLICY_META ──────
+//       var ids = { slidesId: null, videoId: null, imageId: null, audioId: null };
 
-      Object.keys(POLICY_META).forEach(function(dk) {
-        // Top-level image
-        var top = POLICY_META[dk].media;
-        if (top && top.type === 'image' && top.id && !ids.imageId) {
-          ids.imageId = top.id;
-        }
+//       Object.keys(POLICY_META).forEach(function(dk) {
+//         // Top-level image
+//         var top = POLICY_META[dk].media;
+//         if (top && top.type === 'image' && top.id && !ids.imageId) {
+//           ids.imageId = top.id;
+//         }
 
-        var bd = POLICY_META[dk].bulletDetails || {};
-        Object.keys(bd).forEach(function(bk) {
-          var m = bd[bk].media;
-          if (!m) return;
+//         var bd = POLICY_META[dk].bulletDetails || {};
+//         Object.keys(bd).forEach(function(bk) {
+//           var m = bd[bk].media;
+//           if (!m) return;
 
-          // Single media
-          if (m.type === 'gslides'      && m.id && !ids.slidesId) ids.slidesId = m.id;
-          if (m.type === 'gdrive-video' && m.id && !ids.videoId)  ids.videoId  = m.id;
-          if (m.type === 'youtube'      && m.id && !ids.videoId)  ids.videoId  = m.id;
-          if (m.type === 'audio'        && m.id && !ids.audioId)  ids.audioId  = m.id;
+//           // Single media
+//           if (m.type === 'gslides'      && m.id && !ids.slidesId) ids.slidesId = m.id;
+//           if (m.type === 'gdrive-video' && m.id && !ids.videoId)  ids.videoId  = m.id;
+//           if (m.type === 'youtube'      && m.id && !ids.videoId)  ids.videoId  = m.id;
+//           if (m.type === 'audio'        && m.id && !ids.audioId)  ids.audioId  = m.id;
 
-        // Dual media
-        if (m.slides && m.slides.id && !ids.slidesId) ids.slidesId = m.slides.id;
-        if (m.video  && m.video.type === 'gdrive-video' && m.video.id && !ids.videoId) {
-          ids.videoId = m.video.id;
-        }
-        if (m.video  && m.video.type === 'youtube' && m.video.id && !ids.videoId) {
-          ids.videoId = m.video.id;
-        }
-        });
-      });
+//         // Dual media
+//         if (m.slides && m.slides.id && !ids.slidesId) ids.slidesId = m.slides.id;
+//         if (m.video  && m.video.type === 'gdrive-video' && m.video.id && !ids.videoId) {
+//           ids.videoId = m.video.id;
+//         }
+//         if (m.video  && m.video.type === 'youtube' && m.video.id && !ids.videoId) {
+//           ids.videoId = m.video.id;
+//         }
+//         });
+//       });
 
-      // Also check POLICY_META ↔ DOCS key parity client-side
-      var metaKeys    = Object.keys(POLICY_META);
-      var docsKeys    = Object.keys(NAV_LABELS);
-      var missingMeta = docsKeys.filter(function(k) { return metaKeys.indexOf(k) === -1; });
-      var missingNav  = metaKeys.filter(function(k) { return docsKeys.indexOf(k) === -1; });
-      var parityOk    = missingMeta.length === 0 && missingNav.length === 0;
+//       // Also check POLICY_META ↔ DOCS key parity client-side
+//       var metaKeys    = Object.keys(POLICY_META);
+//       var docsKeys    = Object.keys(NAV_LABELS);
+//       var missingMeta = docsKeys.filter(function(k) { return metaKeys.indexOf(k) === -1; });
+//       var missingNav  = metaKeys.filter(function(k) { return docsKeys.indexOf(k) === -1; });
+//       var parityOk    = missingMeta.length === 0 && missingNav.length === 0;
 
-      result.services.keyParity = {
-        ok:      parityOk,
-        message: parityOk
-          ? 'POLICY_META and NAV_LABELS match (' + metaKeys.length + ' keys)'
-          : (missingMeta.length ? 'In NAV_LABELS not META: ' + missingMeta.join(', ') + '. ' : '') +
-            (missingNav.length  ? 'In META not NAV_LABELS: ' + missingNav.join(', ')          : '')
-      };
-      if (!parityOk) result.overall = false;
+//       result.services.keyParity = {
+//         ok:      parityOk,
+//         message: parityOk
+//           ? 'POLICY_META and NAV_LABELS match (' + metaKeys.length + ' keys)'
+//           : (missingMeta.length ? 'In NAV_LABELS not META: ' + missingMeta.join(', ') + '. ' : '') +
+//             (missingNav.length  ? 'In META not NAV_LABELS: ' + missingNav.join(', ')          : '')
+//       };
+//       if (!parityOk) result.overall = false;
 
-      // ── Phase 2 server call — media ID checks ────────────
-      google.script.run
-        .withSuccessHandler(function(mediaResult) {
-          btn.disabled    = false;
-          btn.textContent = 'Check Auth';
+//       // ── Phase 2 server call — media ID checks ────────────
+//       google.script.run
+//         .withSuccessHandler(function(mediaResult) {
+//           btn.disabled    = false;
+//           btn.textContent = 'Check Auth';
 
-          // Merge media results into main result
-          Object.keys(mediaResult).forEach(function(k) {
-            result.services[k] = mediaResult[k];
-            if (!mediaResult[k].ok) result.overall = false;
-          });
+//           // Merge media results into main result
+//           Object.keys(mediaResult).forEach(function(k) {
+//             result.services[k] = mediaResult[k];
+//             if (!mediaResult[k].ok) result.overall = false;
+//           });
 
-          renderAuthResult(output, result);
-        })
-        .withFailureHandler(function(err) {
-          btn.disabled    = false;
-          btn.textContent = 'Check Auth';
-          result.services.mediaCheck = { ok: false, message: err.message };
-          result.overall = false;
-          renderAuthResult(output, result);
-        })
-        .checkMediaIds(ids);
-    })
-    .withFailureHandler(function(err) {
-      btn.disabled    = false;
-      btn.textContent = 'Check Auth';
-      output.innerHTML =
-        '<div class="auth-check-row">' +
-          '<span>❌ <strong>Script error</strong></span>' +
-          '<span style="color:#ef4444;font-size:12px;">' + err.message + '</span>' +
-        '</div>';
-    })
-    .checkAuthStatus();
-}
+//           renderAuthResult(output, result);
+//         })
+//         .withFailureHandler(function(err) {
+//           btn.disabled    = false;
+//           btn.textContent = 'Check Auth';
+//           result.services.mediaCheck = { ok: false, message: err.message };
+//           result.overall = false;
+//           renderAuthResult(output, result);
+//         })
+//         .checkMediaIds(ids);
+//     })
+//     .withFailureHandler(function(err) {
+//       btn.disabled    = false;
+//       btn.textContent = 'Check Auth';
+//       output.innerHTML =
+//         '<div class="auth-check-row">' +
+//           '<span>❌ <strong>Script error</strong></span>' +
+//           '<span style="color:#ef4444;font-size:12px;">' + err.message + '</span>' +
+//         '</div>';
+//     })
+//     .checkAuthStatus();
+// }
 
 // Populated by initApp() after POLICY_META loads
 var SEARCH_INDEX = [];
@@ -223,25 +205,33 @@ var SEARCH_INDEX = [];
 // ===========================
 // RENDER AUTH RESULT
 // ===========================
-function renderAuthResult(output, result) {
-  var rows = Object.keys(result.services).map(function(key) {
-    var svc   = result.services[key];
-    var icon  = svc.ok ? '✅' : '❌';
-    var color = svc.ok ? 'var(--accent-bright)' : '#ef4444';
-    return '<div class="auth-check-row">' +
-             '<span>' + icon + ' <strong>' + key + '</strong></span>' +
-             '<span style="color:' + color + ';font-size:12px;">' + svc.message + '</span>' +
-           '</div>';
-  }).join('');
-
-  var overallColor = result.overall ? 'var(--accent-bright)' : '#ef4444';
-  var overallText  = result.overall ? '✅ All systems authenticated' : '❌ Issues detected — see below';
-
-  output.innerHTML =
-    '<div class="auth-check-overall" style="color:' + overallColor + ';">' + overallText + '</div>' +
-    rows +
-    '<div class="auth-check-time">Checked at: ' + result.timestamp + '</div>';
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
 }
+// function renderAuthResult(output, result) {
+//   var rows = Object.keys(result.services).map(function(key) {
+//     var svc   = result.services[key];
+//     var icon  = svc.ok ? '✅' : '❌';
+//     var color = svc.ok ? 'var(--accent-bright)' : '#ef4444';
+//     return '<div class="auth-check-row">' +
+//              '<span>' + icon + ' <strong>' + key + '</strong></span>' +
+//              '<span style="color:' + color + ';font-size:12px;">' + escapeHtml(svc.message) + '</span>' +
+//            '</div>';
+//   }).join('');
+
+//   var overallColor = result.overall ? 'var(--accent-bright)' : '#ef4444';
+//   var overallText  = result.overall ? '✅ All systems authenticated' : '❌ Issues detected — see below';
+
+//   output.innerHTML =
+//     '<div class="auth-check-overall" style="color:' + overallColor + ';">' + overallText + '</div>' +
+//     rows +
+//     '<div class="auth-check-time">Checked at: ' + result.timestamp + '</div>';
+// }
 
 // ===========================
 // VIDEO CACHE
@@ -357,16 +347,6 @@ function renderMediaBox(containerId, media) {
   })();
   break;
 case 'gdrive-video':
-  // ===========================
-  // GCP MIGRATION NOTE
-  // When migrating to Cloud Storage:
-  //   1. getVideoBase64 returns a GCS URL instead of base64
-  //   2. Replace the <source src="..."> below with the URL directly
-  //   3. Remove the _videoCache check — browser caches GCS natively
-  //   4. Remove the preloader in DOMContentLoaded — no longer needed
-  //   See Code.gs getVideoBase64 for full migration steps.
-  // ===========================
-  // ✅ Already cached — render instantly
   if (_videoCache[media.id]) {
     box.innerHTML =
       '<video controls style="width:100%;border-radius:8px;background:#000;" preload="auto">' +
@@ -374,8 +354,6 @@ case 'gdrive-video':
       '</video>' + caption;
     break;
   }
-
-  // ✅ Not yet cached — show loading state, fetch in background
   box.innerHTML =
     '<div class="video-loading-box">' +
       '<div class="video-loading-spinner"></div>' +
@@ -477,7 +455,7 @@ function buildMediaSrc(media) {
       return 'https://docs.google.com/presentation/d/' + media.id +
              '/embed?rm=minimal&start=false&loop=false';
   case 'gdrive-video':
-    return 'https://drive.google.com/file/d/' + media.id + '/preview';
+  return 'https://drive.google.com/file/d/' + media.id + '/preview';
     default:
       return null;
   }
@@ -486,7 +464,7 @@ function buildMediaSrc(media) {
 // ===========================
 // OPEN MODAL
 // ===========================
-function openModal(title, body, media, docKey) {
+function openModal(title, body, media) {
   document.getElementById('modal-title').textContent = title;
 
   var modalBody         = document.getElementById('modal-body');
@@ -578,11 +556,11 @@ function renderRecentlyViewed() {
   list.innerHTML = recentlyViewed.map(function(r) {
     var timeAgo = getTimeAgo(r.time);
     return [
-      '<a href="#" class="doc-row" onclick="loadPolicyFromRecent(event,\'' + r.key + '\',\'' + r.label + '\')">',
+      '<a href="#" class="doc-row" onclick="loadPolicyFromRecent(event,\'' + r.key + '\',\'' + escapeHtml(r.label) + '\')">',
       '  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">',
       '    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>',
       '  </svg>',
-      '  <span>' + r.label + '</span>',
+      '  <span>' + escapeHtml(r.label) + '</span>',
       '</a>'
     ].join('');
   }).join('');
@@ -679,7 +657,7 @@ google.script.run
   })
   .withFailureHandler(function(err) {
     fullContent.innerHTML =
-      '<span class="doc-error">Failed to load: ' + err.message + '</span>';
+      '<span class="doc-error">Failed to load: ' + escapeHtml(err.message) + '</span>';
   })
   .getDocContent(docKey);
 
@@ -822,11 +800,11 @@ function renderSearchResults(query, results) {
       '<a href="#" class="search-result-row" onclick="' + onclick + '">',
       '  <div class="search-result-text">',
       '    <span class="search-result-label">' +
-             (isPolicy ? r.label : r.label + ' → ' + r.title) +
+             escapeHtml(isPolicy ? r.label : r.label + ' → ' + r.title) +
            '</span>',
       '    <span class="search-result-preview">' + r.preview + '</span>',
       '  </div>',
-      '  <span class="search-result-tag">' + (isPolicy ? 'Policy' : 'Detail') + '</span>',
+      '  <span class="search-result-tag">' + escapeHtml(isPolicy ? 'Policy' : 'Detail') + '</span>',
       '</a>'
     ].join('');
   }).join('');
@@ -882,49 +860,38 @@ function loadPolicyAndOpenBullet(event, docKey, label, bulletTitle) {
   });
 }
 
-// ===========================
-// SEARCH INPUT LISTENER
-// Replaces the CMD+K only block
-// ===========================
 document.addEventListener('DOMContentLoaded', function() {
+
+  // ── Init gate ──────────────────────────────────────
+  _domReady = true;
+  _tryInit();
+
+  // ── Search input ───────────────────────────────────
   var input = document.getElementById('searchInput');
-  if (!input) return;
-
-  input.addEventListener('input', function() {
-    runSearch(this.value);
-  });
-
-  input.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-      this.value = '';
-      closeSearchDropdown();
-      this.blur();
-    }
-  });
-});
-
-// Close dropdown when clicking outside
-document.addEventListener('click', function(e) {
-  var search = document.querySelector('.navbar-search');
-  if (search && !search.contains(e.target)) {
-    closeSearchDropdown();
+  if (input) {
+    input.addEventListener('input', function() { runSearch(this.value); });
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        this.value = '';
+        closeSearchDropdown();
+        this.blur();
+      }
+    });
   }
-});
 
-document.addEventListener('DOMContentLoaded', function() {
-  var list = document.getElementById('search-results-list');  // ✅ the actual scroll container
-  if (!list) return;
+  // ── Search scroll isolation ────────────────────────
+  var list = document.getElementById('search-results-list');
+  if (list) {
+    list.addEventListener('wheel', function(e) {
+      var atTop    = this.scrollTop === 0;
+      var atBottom = this.scrollTop + this.clientHeight >= this.scrollHeight;
+      if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
+        e.preventDefault();
+      }
+      e.stopPropagation();
+    }, { passive: false });
+  }
 
-  list.addEventListener('wheel', function(e) {
-    var atTop    = this.scrollTop === 0;
-    var atBottom = this.scrollTop + this.clientHeight >= this.scrollHeight;
-
-    if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
-      e.preventDefault();
-    }
-
-    e.stopPropagation();
-  }, { passive: false });
 });
 
 // ── Sanitize helper — strips all HTML tags and dangerous chars ──

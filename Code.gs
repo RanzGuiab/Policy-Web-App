@@ -2,6 +2,7 @@
 
 // ===========================
 // SHEET CONFIG
+// INSTRUCTIONS: Get the Google Sheet ID by checking the URL of the resource, then copy paste the ID and put it in the variable "SHEET_ID".
 // ===========================
 var SHEET_ID = '1VZy3i_uRU__VQkR11xdQtP9KUSi3jF8ow-dg6eHqQuU'; // appsscript.json handles AuthN after forcing it on Handover.
 
@@ -32,6 +33,14 @@ function getDocs() {
 // ===========================
 function getPolicyMeta() {
   var ss = getSheet();
+
+  var policiesSheet = ss.getSheetByName('Policies');
+  var bulletsSheet  = ss.getSheetByName('Bullets');
+  var detailsSheet  = ss.getSheetByName('BulletDetails');
+
+  if (!policiesSheet) throw new Error('Sheet tab missing: "Policies"');
+  if (!bulletsSheet)  throw new Error('Sheet tab missing: "Bullets"');
+  if (!detailsSheet)  throw new Error('Sheet tab missing: "BulletDetails"');
 
   var policies = ss.getSheetByName('Policies').getDataRange().getValues();
   var bullets  = ss.getSheetByName('Bullets').getDataRange().getValues();
@@ -206,18 +215,7 @@ function checkMediaIds(ids) {
       } catch(e) {
         results.driveVideo = { ok: false, message: e.message };
       }
-    } else {
-      // ── Drive video ID
-      try {
-        var f = DriveApp.getFileById(ids.videoId);
-        results.driveVideo = {
-          ok:      true,
-          message: '"' + f.getName() + '" — ' + Math.round(f.getSize() / 1024) + ' KB'
-        };
-      } catch(e) {
-        results.driveVideo = { ok: false, message: e.message };
-      }
-    }
+    } 
   } else {
     results.driveVideo = { ok: true, message: 'No video ID configured — skipped' };
   }
@@ -447,8 +445,9 @@ function getDocContent(docKey) {
 // =====================================================
 
 function getVideoBase64(fileId) {
-  var file  = DriveApp.getFileById(fileId);
-  var bytes = file.getBlob().getBytes();
-  var b64   = Utilities.base64Encode(bytes);
-  return 'data:video/mp4;base64,' + b64;
+  var file     = DriveApp.getFileById(fileId);
+  var blob     = file.getBlob();
+  var mimeType = blob.getContentType() || 'video/mp4';
+  var b64      = Utilities.base64Encode(blob.getBytes());
+  return 'data:' + mimeType + ';base64,' + b64;
 }
