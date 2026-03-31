@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Policy Atlas Showcase</title>
+  <title>Policy Showcase</title>
   <?!= include('styles'); ?>
 </head>
 <body>
@@ -24,10 +24,10 @@
         <path d="M3 4h18v14H3z"/>
         <path d="M8 20h8"/>
       </svg>
-      <span>Policy Atlas</span>
+      <span>Policy Showcase</span>
     </button>
 
-    <span class="build-chip">portfolio build</span>
+    <!-- <span class="build-chip">portfolio build</span> -->
 
     <div class="top-search">
       <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -136,8 +136,8 @@
       <div id="modal-media-container" class="modal-media" style="display:none;"></div>
 
       <div id="modal-media-switcher" class="media-switcher" style="display:none;">
-        <button id="switcher-btn-slides" class="media-switcher-btn active" data-modal-media="slides" type="button">Slides</button>
-        <button id="switcher-btn-video" class="media-switcher-btn" data-modal-media="video" type="button">Video</button>
+        <button id="switcher-btn-slides" onClick="switchModalMedia('slides')" class="media-switcher-btn active" data-modal-media="slides" type="button">Slides</button>
+        <button id="switcher-btn-video" onClick="switchModalMedia('video')" class="media-switcher-btn" data-modal-media="video" type="button">Video</button>
       </div>
 
       <div id="modal-media-placeholder" class="modal-media-placeholder">
