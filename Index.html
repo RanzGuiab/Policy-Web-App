@@ -8,6 +8,11 @@
 </head>
 <body>
 
+<div id="app-loading-overlay">
+  <div class="app-loading-spinner"></div>
+  <span class="app-loading-label">Loading handbook...</span>
+</div>
+
     <!-- SIDEBAR OVERLAY (mobile) -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -38,13 +43,12 @@
             </svg>
             <span class="brand-name">Company</span>
         </div>
-        <span>build 03011546</span>
+        <span>build 03050923</span>
         <div class="navbar-search">
             <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
             <input type="text" id="searchInput" placeholder="Search documents..." />
-                    <!-- Search dropdown — sits under navbar search input -->
         <div id="search-dropdown" class="search-dropdown" style="display:none;">
           <p id="search-results-count" class="search-dropdown-count"></p>
           <div id="search-results-list" class="search-dropdown-list"></div>
@@ -58,67 +62,7 @@
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="sidebar-content">
-
-                <!-- Welcome Documents -->
-                <div class="sidebar-section">
-                    <div class="section-header">Welcome Documents</div>
-                    <div class="nav-group">
-                        <div class="nav-group-header">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                            <span>👋 Welcome</span>
-                        </div>
-                        <div class="nav-items" style="display:none;">
-                            <a href="#" class="nav-item" onclick="loadPolicy(event,'purpose_background','Purpose &amp; Background')">Purpose &amp; Background</a>
-                            <a href="#" class="nav-item" onclick="loadPolicy(event,'company_history','Company History')">Company History</a>
-                            <a href="#" class="nav-item" onclick="loadPolicy(event,'team_structure','Team &amp; Structure')">Team &amp; Structure</a>
-                            <a href="#" class="nav-item" onclick="loadPolicy(event,'types_of_content','Types of Content')">Types of Content</a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Office & Admin -->
-                <div class="sidebar-section">
-                    <div class="section-header">Office &amp; Admin</div>
-                    <div class="nav-group">
-                        <div class="nav-group-header">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                            <span>🏢 Office &amp; Admin</span>
-                        </div>
-                        <div class="nav-items" style="display:none;">
-                            <a href="#" class="nav-item" onclick="loadPolicy(event,'office_security','Office Security')">Office Security</a>
-                            <a href="#" class="nav-item" onclick="loadPolicy(event,'gdpr_compliance','GDPR Compliance')">GDPR Compliance</a>
-                            <a href="#" class="nav-item" onclick="loadPolicy(event,'internal_communication','Internal Communication')">Internal Communication</a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sales & Marketing -->
-                <div class="sidebar-section">
-                    <div class="section-header">Sales &amp; Marketing</div>
-                    <div class="nav-group">
-                        <div class="nav-group-header">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                            <span>📈 Sales Handbook</span>
-                        </div>
-                        <div class="nav-items" style="display:none;">
-                            <a href="#" class="nav-item" onclick="loadPolicy(event,'lead_generation','Lead Generation')">Lead Generation</a>
-                            <a href="#" class="nav-item" onclick="loadPolicy(event,'guiding_statements','Guiding Statements')">Guiding Statements</a>
-                            <a href="#" class="nav-item" onclick="loadPolicy(event,'sales_calls','Conducting Sales Calls')">Conducting Sales Calls</a>
-                            <a href="#" class="nav-item" onclick="loadPolicy(event,'creating_proposals','Creating Proposals')">Creating Proposals</a>
-                            <a href="#" class="nav-item" onclick="loadPolicy(event,'sales_objections','Sales Objections')">Sales Objections</a>
-                        </div>
-                    </div>
-                    <div class="nav-group">
-                        <div class="nav-group-header">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                            <span>❓ FAQs</span>
-                        </div>
-                        <div class="nav-items" style="display:none;">
-                            <a href="#" class="nav-item" onclick="loadPolicy(event,'faqs','FAQs')">View FAQs</a>
-                        </div>
-                    </div>
-                </div>
-
+              <div id="nav-groups-container"></div>
             </div>
         </aside>
 
@@ -143,7 +87,6 @@
                         <h3>Policies</h3>
                         <p>This is the single source of truth for your company's policies and procedures.</p>
                         <p>Here you'll find all your compliance, operational and reference policies.</p>
-                        <a href="#" class="cta-link" onclick="loadPolicy(event,'purpose_background','Purpose &amp; Background')">Get started →</a>
                     </div>
 
                 </div>
