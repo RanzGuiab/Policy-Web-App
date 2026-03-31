@@ -135,17 +135,22 @@
     <div class="modal-box" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
       <div id="modal-media-container" class="modal-media" style="display:none;"></div>
 
+      <div id="modal-media-placeholder" class="modal-media-placeholder">
+        <span>No media for this detail yet</span>
+      </div>
+
+      <div class="modal-container">
+      
       <div id="modal-media-switcher" class="media-switcher" style="display:none;">
         <button id="switcher-btn-slides" onClick="switchModalMedia('slides')" class="media-switcher-btn active" data-modal-media="slides" type="button">Slides</button>
         <button id="switcher-btn-video" onClick="switchModalMedia('video')" class="media-switcher-btn" data-modal-media="video" type="button">Video</button>
       </div>
 
-      <div id="modal-media-placeholder" class="modal-media-placeholder">
-        <span>No media for this detail yet</span>
-      </div>
+
 
       <h3 id="modal-title"></h3>
       <p id="modal-body"></p>
+    </div>
     </div>
   </div>
 
