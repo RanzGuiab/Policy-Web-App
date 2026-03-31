@@ -1,7 +1,7 @@
 // CODE.GS
 // Portfolio-safe backend for a spreadsheet-driven policy portal.
 // Set this to your own Google Sheet ID before deployment.
-var SHEET_ID = 'REPLACE_WITH_SHEET_ID';
+var SHEET_ID = '1VZy3i_uRU__VQkR11xdQtP9KUSi3jF8ow-dg6eHqQuU';
 
 // Open source spreadsheet.
 function getSheet() {
