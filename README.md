@@ -1,6 +1,6 @@
 # Policy-Admin
 
-<img width="1702" height="857" alt="Screenshot 2026-03-31 at 1 03 08 PM" src="https://github.com/user-attachments/assets/6768878a-ef4d-41f2-89b6-4b44719c0563" />
+<img width="1702" height="847" alt="Screenshot 2026-03-31 at 1 03 45 PM" src="https://github.com/user-attachments/assets/b0a9a01d-a3c1-4728-8aae-de2304b448ae" />
 
 A private Google Apps Script-based web application for hosting infosec graphics, promotional materials, and related assets in a Google Workspace environment. 
 **This branch contins the admin page of the website and is isolated from the main web application branch so it does not change interfere with the main branch**
