@@ -1,234 +1,17 @@
 <script>
-// APP.HTML
-// ===========================
-// POLICY META
-// Loaded from Google Sheet via Code.gs
-// ===========================
+var APP_STATE = {
+  domReady: false,
+  metaReady: false,
+  navReady: false,
+  policyMeta: {},
+  navItems: [],
+  navLabels: {},
+  searchIndex: [],
+  recentlyViewed: [],
+  videoCache: {},
+  currentDualMedia: null
+};
 
-var _domReady  = false;
-var _metaReady = false;
-var _navReady   = false;
-
-function _tryInit() {
-  if (_domReady && _metaReady && _navReady) {
-    initApp();
-  }
-}
-
-var POLICY_META = {};
-var NAV_LABELS  = {};  
-var NAV_ITEMS   = [];   
-
-google.script.run
-  .withSuccessHandler(function(meta) {
-    POLICY_META = meta;
-    _metaReady  = true;
-    _tryInit();
-  })
-  .withFailureHandler(function(err) {
-    console.error('getPolicyMeta FAILED:', err.message);
-  })
-  .getPolicyMeta();
-
-  // ── Load NAV ──
-  google.script.run
-    .withSuccessHandler(function(navItems) {
-      NAV_ITEMS = navItems;
-
-      // Build NAV_LABELS map: { docKey: label }
-      navItems.forEach(function(item) {
-        NAV_LABELS[item.docKey] = item.label;
-      });
-
-      // Build sidebar HTML
-      buildSidebar(navItems);
-
-      _navReady = true;
-      _tryInit();
-    })
-    .withFailureHandler(function(err) {
-      console.error('getNavLabels FAILED:', err.message);
-    })
-    .getNavLabels();
-
-// ===========================
-// INIT APP
-// Called only after POLICY_META
-// is loaded from Google Sheet
-// ===========================
-function initApp() {
-
-  // ── 1. Build search index ──────────────────────────────
-  SEARCH_INDEX = [];
-  Object.keys(POLICY_META).forEach(function(docKey) {
-    var meta  = POLICY_META[docKey];
-    var label = NAV_LABELS[docKey] || docKey;
-
-    SEARCH_INDEX.push({
-      type:    'policy',
-      docKey:  docKey,
-      label:   label,
-      preview: meta.tagline || '',
-      search:  [label, meta.tagline].join(' ').toLowerCase()
-    });
-
-    var details = meta.bulletDetails || {};
-    Object.keys(details).forEach(function(bulletText) {
-      var detail = details[bulletText];
-      SEARCH_INDEX.push({
-        type:    'bullet',
-        docKey:  docKey,
-        label:   label,
-        title:   detail.title,
-        preview: detail.body ? detail.body.substring(0, 100) + '...' : '',
-        media:   detail.media || null,
-        search:  [bulletText, detail.title, detail.body].join(' ').toLowerCase()
-      });
-    });
-  });
-
-  // ── 2. Preload videos silently ─────────────────────────
-  Object.keys(POLICY_META).forEach(function(docKey) {
-    var details = POLICY_META[docKey].bulletDetails || {};
-    Object.keys(details).forEach(function(bulletText) {
-      var media = details[bulletText].media;
-      if (!media) return;
-
-      var videoMedia = (media.video && media.video.type === 'gdrive-video') ? media.video : null;
-      if (!videoMedia && media.type === 'gdrive-video') videoMedia = media;
-
-      if (videoMedia && videoMedia.id && !_videoCache[videoMedia.id]) {
-        (function(fileId) {
-          google.script.run
-            .withSuccessHandler(function(dataUrl) { _videoCache[fileId] = dataUrl; })
-            .withFailureHandler(function() {})
-            .getVideoBase64(fileId);
-        })(videoMedia.id);
-      }
-    });
-  });
-
-  // ── 3. Dismiss loading overlay ─────────────────────────
-  var overlay = document.getElementById('app-loading-overlay');
-  if (overlay) {
-    overlay.classList.add('hidden');
-    setTimeout(function() { overlay.style.display = 'none'; }, 300);
-  }
-}
-
-// ===========================
-// AUTH CHECK — CLIENT SIDE
-// Phase 1: server checks Drive/Docs/Session
-// Phase 2: client extracts IDs from POLICY_META
-//          and sends to server for media checks
-// ===========================
-// function runAuthCheck() {
-//   var btn    = document.getElementById('auth-check-btn');
-//   var output = document.getElementById('auth-check-output');
-//   if (!btn || !output) return;
-
-//   btn.disabled         = true;
-//   btn.textContent      = 'Checking...';
-//   output.style.display = 'block';
-//   output.innerHTML     =
-//     '<div class="auth-check-row">' +
-//       '<div class="video-loading-spinner" style="width:16px;height:16px;border-width:2px;margin-right:8px;display:inline-block;"></div>' +
-//       '<span>Contacting Apps Script...</span>' +
-//     '</div>';
-
-//   // ── Phase 1: server auth check ───────────────────────────
-//   google.script.run
-//     .withSuccessHandler(function(result) {
-
-//       // ── Phase 2: extract media IDs from POLICY_META ──────
-//       var ids = { slidesId: null, videoId: null, imageId: null, audioId: null };
-
-//       Object.keys(POLICY_META).forEach(function(dk) {
-//         // Top-level image
-//         var top = POLICY_META[dk].media;
-//         if (top && top.type === 'image' && top.id && !ids.imageId) {
-//           ids.imageId = top.id;
-//         }
-
-//         var bd = POLICY_META[dk].bulletDetails || {};
-//         Object.keys(bd).forEach(function(bk) {
-//           var m = bd[bk].media;
-//           if (!m) return;
-
-//           // Single media
-//           if (m.type === 'gslides'      && m.id && !ids.slidesId) ids.slidesId = m.id;
-//           if (m.type === 'gdrive-video' && m.id && !ids.videoId)  ids.videoId  = m.id;
-//           if (m.type === 'youtube'      && m.id && !ids.videoId)  ids.videoId  = m.id;
-//           if (m.type === 'audio'        && m.id && !ids.audioId)  ids.audioId  = m.id;
-
-//         // Dual media
-//         if (m.slides && m.slides.id && !ids.slidesId) ids.slidesId = m.slides.id;
-//         if (m.video  && m.video.type === 'gdrive-video' && m.video.id && !ids.videoId) {
-//           ids.videoId = m.video.id;
-//         }
-//         if (m.video  && m.video.type === 'youtube' && m.video.id && !ids.videoId) {
-//           ids.videoId = m.video.id;
-//         }
-//         });
-//       });
-
-//       // Also check POLICY_META ↔ DOCS key parity client-side
-//       var metaKeys    = Object.keys(POLICY_META);
-//       var docsKeys    = Object.keys(NAV_LABELS);
-//       var missingMeta = docsKeys.filter(function(k) { return metaKeys.indexOf(k) === -1; });
-//       var missingNav  = metaKeys.filter(function(k) { return docsKeys.indexOf(k) === -1; });
-//       var parityOk    = missingMeta.length === 0 && missingNav.length === 0;
-
-//       result.services.keyParity = {
-//         ok:      parityOk,
-//         message: parityOk
-//           ? 'POLICY_META and NAV_LABELS match (' + metaKeys.length + ' keys)'
-//           : (missingMeta.length ? 'In NAV_LABELS not META: ' + missingMeta.join(', ') + '. ' : '') +
-//             (missingNav.length  ? 'In META not NAV_LABELS: ' + missingNav.join(', ')          : '')
-//       };
-//       if (!parityOk) result.overall = false;
-
-//       // ── Phase 2 server call — media ID checks ────────────
-//       google.script.run
-//         .withSuccessHandler(function(mediaResult) {
-//           btn.disabled    = false;
-//           btn.textContent = 'Check Auth';
-
-//           // Merge media results into main result
-//           Object.keys(mediaResult).forEach(function(k) {
-//             result.services[k] = mediaResult[k];
-//             if (!mediaResult[k].ok) result.overall = false;
-//           });
-
-//           renderAuthResult(output, result);
-//         })
-//         .withFailureHandler(function(err) {
-//           btn.disabled    = false;
-//           btn.textContent = 'Check Auth';
-//           result.services.mediaCheck = { ok: false, message: err.message };
-//           result.overall = false;
-//           renderAuthResult(output, result);
-//         })
-//         .checkMediaIds(ids);
-//     })
-//     .withFailureHandler(function(err) {
-//       btn.disabled    = false;
-//       btn.textContent = 'Check Auth';
-//       output.innerHTML =
-//         '<div class="auth-check-row">' +
-//           '<span>❌ <strong>Script error</strong></span>' +
-//           '<span style="color:#ef4444;font-size:12px;">' + err.message + '</span>' +
-//         '</div>';
-//     })
-//     .checkAuthStatus();
-// }
-
-// Populated by initApp() after POLICY_META loads
-var SEARCH_INDEX = [];
-
-// ===========================
-// RENDER AUTH RESULT
-// ===========================
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -237,680 +20,482 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#x27;');
 }
-// function renderAuthResult(output, result) {
-//   var rows = Object.keys(result.services).map(function(key) {
-//     var svc   = result.services[key];
-//     var icon  = svc.ok ? '✅' : '❌';
-//     var color = svc.ok ? 'var(--accent-bright)' : '#ef4444';
-//     return '<div class="auth-check-row">' +
-//              '<span>' + icon + ' <strong>' + key + '</strong></span>' +
-//              '<span style="color:' + color + ';font-size:12px;">' + escapeHtml(svc.message) + '</span>' +
-//            '</div>';
-//   }).join('');
 
-//   var overallColor = result.overall ? 'var(--accent-bright)' : '#ef4444';
-//   var overallText  = result.overall ? '✅ All systems authenticated' : '❌ Issues detected — see below';
+function escapeJsString(str) {
+  return String(str)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, ' ')
+    .replace(/\r/g, ' ');
+}
 
-//   output.innerHTML =
-//     '<div class="auth-check-overall" style="color:' + overallColor + ';">' + overallText + '</div>' +
-//     rows +
-//     '<div class="auth-check-time">Checked at: ' + result.timestamp + '</div>';
-// }
+function runServer(method, arg, success, failure) {
+  var req = google.script.run
+    .withSuccessHandler(success)
+    .withFailureHandler(function(err) {
+      console.error(method + ' failed:', err && err.message ? err.message : err);
+      if (failure) failure(err || { message: 'Unknown error' });
+    });
 
-// ===========================
-// VIDEO CACHE
-// Stores base64 data URLs after first load
-// so subsequent renders are instant
-// ===========================
-var _videoCache = {};
-
-// ===========================
-// MEDIA SWITCHER
-// ===========================
-var _currentDualMedia = null;
-
-function switchModalMedia(type) {
-  if (!_currentDualMedia) return;
-
-  var media = _currentDualMedia[type];
-  if (!media) return;
-
-  document.getElementById('switcher-btn-slides').classList.toggle('active', type === 'slides');
-  document.getElementById('switcher-btn-video').classList.toggle('active',  type === 'video');
-
-  // ✅ Clear container first — prevents old content showing during load
-  var container = document.getElementById('modal-media-container');
-  container.innerHTML = '';
-
-  renderMediaBox('modal-media-container', media);
-
-  // ✅ Always show container — renderMediaBox handles content async
-  container.style.display = 'block';
-
-  if (type === 'video') {
-    container.setAttribute('data-block-keys', 'true');
+  if (typeof arg === 'undefined') {
+    req[method]();
   } else {
-    container.removeAttribute('data-block-keys');
+    req[method](arg);
   }
 }
 
-// ✅ Capture-phase listener — fires BEFORE iframe receives arrow keys
-document.addEventListener('keydown', function(e) {
-  var container = document.getElementById('modal-media-container');
-  if (container && container.getAttribute('data-block-keys') === 'true') {
-    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].indexOf(e.key) !== -1) {
-      e.stopImmediatePropagation();
-      e.preventDefault();
-    }
-  }
-}, true);
+function tryInit() {
+  if (!APP_STATE.domReady || !APP_STATE.metaReady || !APP_STATE.navReady) return;
 
-function renderMediaBox(containerId, media) {
-  var box = document.getElementById(containerId);
-  if (!box) return;
-
-  var src = buildMediaSrc(media);
-
-  if (!src) {
-    showMediaPlaceholder(box);
-    return;
-  }
-
-  var caption = media.caption
-    ? '<span class="modal-media-caption">' + media.caption + '</span>'
-    : '';
-
-  switch (media.type) {
-
-    case 'image':
-      box.innerHTML =
-        '<img ' +
-          'src="' + src + '" ' +
-          'alt="' + (media.caption || '') + '" ' +
-          'class="media-img-zoomable" ' +
-          'onclick="openImageZoom(\'' + src + '\',\'' + (media.caption || '') + '\')" ' +
-          'title="Click to zoom" ' +
-        '/>' + caption;
-      break;
-
-    case 'audio':
-      box.innerHTML =
-        '<iframe src="' + src + '" class="media-audio-frame" allow="autoplay"></iframe>' + caption;
-      break;
-
-    case 'gslides':
-      var hintId    = 'slides-hint-' + containerId;
-      var wrapperId = 'slides-wrapper-' + containerId;
-      box.innerHTML =
-        '<div class="slides-wrapper" id="' + wrapperId + '">' +
-          '<iframe src="' + src + '" allowfullscreen></iframe>' +
-          '<div class="slides-hint" id="' + hintId + '">' +
-            '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
-              '<polyline points="9 18 15 12 9 6"/>' +
-            '</svg>' +
-            '<span>Click to turn page</span>' +
-          '</div>' +
-        '</div>' + caption;
-
-  (function() {
-    var hint    = document.getElementById(hintId);
-    var wrapper = document.getElementById(wrapperId);
-    if (!hint || !wrapper) return;
-
-    function fadeHint() {
-      hint.classList.add('slides-hint-hidden');
-      // ✅ Remove wrapper click after fade so iframe works normally
-      wrapper.removeEventListener('click', fadeHint);
-    }
-
-    // ✅ Listen on wrapper — catches clicks that pass through hint
-    wrapper.addEventListener('click', fadeHint);
-
-    // ✅ Auto fade after 1 second if not clicked
-    setTimeout(fadeHint, 2500);
-  })();
-  break;
-case 'gdrive-video':
-  if (_videoCache[media.id]) {
-    box.innerHTML =
-      '<video controls style="width:100%;border-radius:8px;background:#000;" preload="auto">' +
-        '<source src="' + _videoCache[media.id] + '" type="video/mp4">' +
-      '</video>' + caption;
-    break;
-  }
-  box.innerHTML =
-    '<div class="video-loading-box">' +
-      '<div class="video-loading-spinner"></div>' +
-      '<span class="video-loading-label">Preparing video</span>' +
-      '<div class="video-loading-dots">' +
-        '<span></span><span></span><span></span>' +
-      '</div>' +
-    '</div>';
-
-  (function(targetBox, fileId, cap) {
-    google.script.run
-      .withSuccessHandler(function(dataUrl) {
-        _videoCache[fileId] = dataUrl;
-        if (!targetBox) return;
-        targetBox.innerHTML =
-          '<video controls style="width:100%;border-radius:8px;background:#000;" preload="auto">' +
-            '<source src="' + dataUrl + '" type="video/mp4">' +
-          '</video>' + cap;
-      })
-      .withFailureHandler(function() {
-        if (!targetBox) return;
-        targetBox.innerHTML =
-          '<div class="video-loading-box">' +
-            '<span class="video-loading-label" style="color:#ef4444;">Failed to load video.</span>' +
-          '</div>';
-      })
-      .getVideoBase64(fileId);
-  })(box, media.id, caption);
-  break;
-    case 'gslides-auto':
-      box.innerHTML =
-        '<iframe src="' + src + '" allowfullscreen></iframe>' + caption;
-      break;
-
-    case 'youtube':
-      box.innerHTML =
-        '<iframe src="' + src + '" allowfullscreen></iframe>' + caption;
-      break;
-  }
+  buildSearchIndex();
+  updateStats();
+  dismissLoadingOverlay();
 }
 
-// ===========================
-// BULLET CLICK → MODAL
-// ===========================
-function renderBullets(docKey) {
-  var meta       = POLICY_META[docKey] || {};
-  var bullets    = meta.bullets || [];
-  var details    = meta.bulletDetails || {};
-  var bulletList = document.getElementById('policy-bullets');
-  bulletList.innerHTML = '';
+function dismissLoadingOverlay() {
+  var overlay = document.getElementById('app-loading-overlay');
+  if (!overlay) return;
 
-  bullets.forEach(function(bullet) {
-    var li        = document.createElement('li');
-    var hasDetail = !!details[bullet];
+  overlay.classList.add('hidden');
+  setTimeout(function() {
+    overlay.style.display = 'none';
+  }, 250);
+}
 
-    li.textContent = bullet;
+function preloadDriveVideos() {
+  Object.keys(APP_STATE.policyMeta).forEach(function(docKey) {
+    var details = APP_STATE.policyMeta[docKey].bulletDetails || {};
 
-    if (hasDetail) {
-      li.classList.add('bullet-clickable');
-      li.setAttribute('title', 'Click to learn more');
+    Object.keys(details).forEach(function(bulletText) {
+      var media = details[bulletText].media;
+      if (!media) return;
 
-      li.onclick = (function(detail) {
-        return function() {
-          openModal(detail.title, detail.body, detail.media || null, docKey);  // ✅ pass docKey
-        };
-      })(details[bullet]);
-    }
+      var driveMedia = null;
+      if (media.type === 'gdrive-video') driveMedia = media;
+      if (media.video && media.video.type === 'gdrive-video') driveMedia = media.video;
+      if (!driveMedia || !driveMedia.id || APP_STATE.videoCache[driveMedia.id]) return;
 
-    bulletList.appendChild(li);
+      runServer('getVideoBase64', driveMedia.id, function(dataUrl) {
+        APP_STATE.videoCache[driveMedia.id] = dataUrl;
+      });
+    });
   });
 }
 
-// ===========================
-// BUILD MEDIA SRC FROM ID
-// ===========================
-function buildMediaSrc(media) {
-  if (!media || !media.id) return null;
+function buildSearchIndex() {
+  APP_STATE.searchIndex = [];
 
-  switch (media.type) {
-    case 'image':
-      return 'https://drive.google.com/thumbnail?id=' + media.id + '&sz=w1000';
-    case 'audio':
-      return 'https://drive.google.com/file/d/' + media.id + '/preview';
-    case 'youtube':
-      var ytId = media.id;
-      // Strip full URL if accidentally pasted
-      if (ytId.indexOf('youtube.com/watch') !== -1) {
-        var match = ytId.match(/[?&]v=([^&]+)/);
-        if (match) ytId = match[1];
-      } else if (ytId.indexOf('youtu.be/') !== -1) {
-        ytId = ytId.split('youtu.be/')[1].split('?')[0];
-      }
-      return 'https://www.youtube.com/embed/' + ytId +
-       '?autoplay=1&mute=1&rel=0&modestbranding=1&controls=1&playsinline=1&iv_load_policy=3';
-    case 'vimeo':
-      return 'https://player.vimeo.com/video/' + media.id;
-    case 'gslides':
-      // ✅ all slides — user navigates freely
-      return 'https://docs.google.com/presentation/d/' + media.id +
-             '/embed?rm=minimal&start=false&loop=false';
-  case 'gdrive-video':
-  return 'https://drive.google.com/file/d/' + media.id + '/preview';
-    default:
-      return null;
+  Object.keys(APP_STATE.policyMeta).forEach(function(docKey) {
+    var meta = APP_STATE.policyMeta[docKey] || {};
+    var label = APP_STATE.navLabels[docKey] || docKey;
+
+    APP_STATE.searchIndex.push({
+      type: 'policy',
+      docKey: docKey,
+      label: label,
+      title: label,
+      preview: meta.tagline || '',
+      search: [label, meta.tagline].join(' ').toLowerCase()
+    });
+
+    var details = meta.bulletDetails || {};
+    Object.keys(details).forEach(function(bulletText) {
+      var detail = details[bulletText] || {};
+
+      APP_STATE.searchIndex.push({
+        type: 'bullet',
+        docKey: docKey,
+        label: label,
+        title: detail.title || bulletText,
+        bulletTitle: detail.title || bulletText,
+        preview: detail.body ? String(detail.body).slice(0, 120) : '',
+        search: [label, bulletText, detail.title, detail.body].join(' ').toLowerCase()
+      });
+    });
+  });
+}
+
+function updateStats() {
+  var docs = Object.keys(APP_STATE.policyMeta);
+  var sections = {};
+  var bullets = 0;
+
+  APP_STATE.navItems.forEach(function(item) {
+    sections[item.section || 'general'] = true;
+  });
+
+  docs.forEach(function(key) {
+    var meta = APP_STATE.policyMeta[key] || {};
+    bullets += (meta.bullets || []).length;
+  });
+
+  var docEl = document.getElementById('stat-doc-count');
+  var secEl = document.getElementById('stat-section-count');
+  var bulEl = document.getElementById('stat-bullet-count');
+
+  if (docEl) docEl.textContent = docs.length;
+  if (secEl) secEl.textContent = Object.keys(sections).length;
+  if (bulEl) bulEl.textContent = bullets;
+}
+
+function buildSidebar(navItems) {
+  var container = document.getElementById('nav-groups-container');
+  if (!container) return;
+
+  var sectionMap = {};
+  var sectionOrder = [];
+
+  navItems.forEach(function(item) {
+    var sectionKey = item.section || 'general';
+    var sectionLabel = item.sectionLabel || 'General';
+
+    if (!sectionMap[sectionKey]) {
+      sectionMap[sectionKey] = { label: sectionLabel, items: [] };
+      sectionOrder.push(sectionKey);
+    }
+
+    sectionMap[sectionKey].items.push(item);
+  });
+
+  var html = sectionOrder.map(function(sectionKey) {
+    var section = sectionMap[sectionKey];
+
+    var itemHtml = section.items.map(function(item) {
+      return [
+        '<a href="#" class="nav-item" ',
+        'data-doc-key="', escapeHtml(item.docKey), '" ',
+        'data-doc-label="', escapeHtml(item.label), '">',
+        escapeHtml(item.label),
+        '</a>'
+      ].join('');
+    }).join('');
+
+    return [
+      '<section class="nav-group">',
+      '  <button class="nav-group-header" type="button">',
+      '    <span>', escapeHtml(section.label), '</span>',
+      '    <span>+</span>',
+      '  </button>',
+      '  <div class="nav-items">', itemHtml, '</div>',
+      '</section>'
+    ].join('');
+  }).join('');
+
+  container.innerHTML = html;
+}
+
+function showView(name) {
+  document.querySelectorAll('.view').forEach(function(node) {
+    node.style.display = 'none';
+  });
+
+  var view = document.getElementById('view-' + name);
+  if (view) view.style.display = 'block';
+
+  if (name === 'home') {
+    document.querySelectorAll('.nav-item.active').forEach(function(item) {
+      item.classList.remove('active');
+    });
   }
+
+  var main = document.querySelector('.main-content');
+  if (main) main.scrollTop = 0;
+  window.scrollTo(0, 0);
 }
 
-// ===========================
-// OPEN MODAL
-// ===========================
-function openModal(title, body, media) {
-  document.getElementById('modal-title').textContent = title;
-
-  var modalBody         = document.getElementById('modal-body');
-  modalBody.textContent = body || '';
-  modalBody.style.opacity = '1';
-
-  var container   = document.getElementById('modal-media-container');
-  var placeholder = document.getElementById('modal-media-placeholder');
-  var switcher    = document.getElementById('modal-media-switcher');
-
-  // Reset
-  container.innerHTML       = '';
-  container.style.display   = 'none';
-  placeholder.style.display = 'none';
-  switcher.style.display    = 'none';
-  _currentDualMedia         = null;
-
-  // ── Dual media ──────────────────────────────────────────
-  if (media && media.slides && media.video) {
-    _currentDualMedia = media;
-    var defaultType = media.default || 'slides';
-    switcher.style.display = 'flex';
-    document.getElementById('switcher-btn-slides').classList.toggle('active', defaultType === 'slides');
-    document.getElementById('switcher-btn-video').classList.toggle('active',  defaultType === 'video');
-    renderMediaBox('modal-media-container', media[defaultType]);
-    container.style.display = 'block';
-
-  // ── Single media ────────────────────────────────────────
-  } else if (media && media.id) {
-    renderMediaBox('modal-media-container', media);
-    container.style.display   = 'block';
-    placeholder.style.display = 'none';
-
-  // ── No media ────────────────────────────────────────────
-  } else {
-    placeholder.style.display = 'flex';
-  }
-
-  document.getElementById('bullet-modal-overlay').classList.add('active');
-  document.body.style.overflow = 'hidden';
+function markActiveNav(docKey) {
+  document.querySelectorAll('.nav-item').forEach(function(item) {
+    item.classList.toggle('active', item.getAttribute('data-doc-key') === docKey);
+  });
 }
-
-// ===========================
-// CLOSE MODAL
-// ===========================
-function closeModal() {
-  document.getElementById('bullet-modal-overlay').classList.remove('active');
-  document.body.style.overflow = '';
-
-  var container = document.getElementById('modal-media-container');
-  container.innerHTML     = '';
-  container.style.display = 'none';
-
-  document.getElementById('modal-media-placeholder').style.display = 'none';
-  document.getElementById('modal-media-switcher').style.display    = 'none';
-
-  _currentDualMedia = null;
-  clearSlidesProgress();
-}
-
-// ===========================
-// RECENTLY VIEWED
-// Stored in memory (resets on page reload)
-// ===========================
-var recentlyViewed = [];
 
 function addToRecentlyViewed(docKey, label) {
-  // Remove if already exists
-  recentlyViewed = recentlyViewed.filter(function(r) { return r.key !== docKey; });
+  APP_STATE.recentlyViewed = APP_STATE.recentlyViewed.filter(function(item) {
+    return item.key !== docKey;
+  });
 
-  // Add to front
-  recentlyViewed.unshift({ key: docKey, label: label, time: new Date() });
-
-  // Keep only last 5
-  if (recentlyViewed.length > 5) recentlyViewed = recentlyViewed.slice(0, 5);
-
+  APP_STATE.recentlyViewed.unshift({ key: docKey, label: label, time: new Date() });
+  APP_STATE.recentlyViewed = APP_STATE.recentlyViewed.slice(0, 5);
   renderRecentlyViewed();
+}
+
+function getTimeAgo(date) {
+  var diff = Math.floor((new Date() - date) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff / 60) + ' min ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + ' hr ago';
+  return Math.floor(diff / 86400) + ' day ago';
 }
 
 function renderRecentlyViewed() {
   var list = document.getElementById('recently-viewed-list');
   if (!list) return;
 
-  if (recentlyViewed.length === 0) {
-    list.innerHTML = '<p class="doc-empty">No recently viewed documents yet.</p>';
+  if (!APP_STATE.recentlyViewed.length) {
+    list.innerHTML = '<p class="doc-empty">No documents viewed yet.</p>';
     return;
   }
 
-  list.innerHTML = recentlyViewed.map(function(r) {
-    var timeAgo = getTimeAgo(r.time);
+  list.innerHTML = APP_STATE.recentlyViewed.map(function(entry) {
     return [
-      '<a href="#" class="doc-row" onclick="loadPolicyFromRecent(event,\'' + r.key + '\',\'' + escapeHtml(r.label) + '\')">',
-      '  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">',
-      '    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>',
-      '  </svg>',
-      '  <span>' + escapeHtml(r.label) + '</span>',
+      '<a href="#" class="doc-row" data-recent-key="', escapeHtml(entry.key), '" data-recent-label="', escapeHtml(entry.label), '">',
+      '<span>', escapeHtml(entry.label), '</span>',
+      '<span class="doc-time">', getTimeAgo(entry.time), '</span>',
       '</a>'
     ].join('');
   }).join('');
 }
 
-function getTimeAgo(date) {
-  var diff = Math.floor((new Date() - date) / 1000);
-  if (diff < 60) return 'Just now';
-  if (diff < 3600) return Math.floor(diff / 60) + ' min ago';
-  if (diff < 86400) return Math.floor(diff / 3600) + ' hr ago';
-  return Math.floor(diff / 86400) + ' days ago';
-}
+function renderBullets(docKey) {
+  var meta = APP_STATE.policyMeta[docKey] || {};
+  var bullets = meta.bullets || [];
+  var details = meta.bulletDetails || {};
+  var list = document.getElementById('policy-bullets');
 
-function loadPolicyFromRecent(event, docKey, label) {
-  event.preventDefault();
-  loadPolicy(event, docKey, label);
-}
+  if (!list) return;
+  list.innerHTML = '';
 
+  bullets.forEach(function(text) {
+    var li = document.createElement('li');
+    li.textContent = text;
 
-// ===========================
-// VIEW SWITCHING
-// ===========================
-function showView(viewName) {
-  document.querySelectorAll('.view').forEach(function(v) {
-    v.style.display = 'none';
+    if (details[text]) {
+      li.classList.add('bullet-clickable');
+      li.setAttribute('data-bullet-doc', docKey);
+      li.setAttribute('data-bullet-text', text);
+    }
+
+    list.appendChild(li);
   });
+}
 
-  var target = document.getElementById('view-' + viewName);
-  if (target) target.style.display = 'block';
+function buildMediaSrc(media) {
+  if (!media || !media.id) return null;
 
-  // Clear active nav item when going home
-  if (viewName === 'home') {
-    document.querySelectorAll('.nav-item').forEach(function(i) {
-      i.classList.remove('active');
-    });
+  switch (media.type) {
+    case 'image':
+      return 'https://drive.google.com/thumbnail?id=' + media.id + '&sz=w1200';
+    case 'audio':
+      return 'https://drive.google.com/file/d/' + media.id + '/preview';
+    case 'gslides':
+      return 'https://docs.google.com/presentation/d/' + media.id + '/embed?rm=minimal&start=false&loop=false';
+    case 'youtube':
+      return 'https://www.youtube.com/embed/' + sanitizeYoutubeId(media.id) + '?rel=0&modestbranding=1';
+    case 'vimeo':
+      return 'https://player.vimeo.com/video/' + media.id;
+    case 'gdrive-video':
+      return 'https://drive.google.com/file/d/' + media.id + '/preview';
+    default:
+      return null;
+  }
+}
+
+function sanitizeYoutubeId(value) {
+  var id = String(value || '');
+
+  if (id.indexOf('youtube.com/watch') !== -1) {
+    var match = id.match(/[?&]v=([^&]+)/);
+    if (match) return match[1];
   }
 
-  // Scroll to top
-  var main = document.querySelector('.main-content');
-  if (main) main.scrollTop = 0;
-  window.scrollTo(0, 0);
-}
-// ===========================
-// LOAD POLICY
-// Called by sidebar nav items
-// ===========================
-function loadPolicy(event, docKey, label) {
-  event.preventDefault();
-
-  // Mark active nav item
-  document.querySelectorAll('.nav-item').forEach(function(i) {
-    i.classList.remove('active');
-  });
-  if (event.currentTarget && event.currentTarget.classList) {
-    event.currentTarget.classList.add('active');
+  if (id.indexOf('youtu.be/') !== -1) {
+    return id.split('youtu.be/')[1].split('?')[0];
   }
 
-  // Switch to policy view
-  showView('policy');
+  return id;
+}
 
-  // --- CONTAINER 1: Populate from POLICY_META ---
-  var meta = POLICY_META[docKey] || {};
+function showMediaPlaceholder(box) {
+  box.innerHTML =
+    '<div class="media-placeholder"><span>No media configured</span></div>';
+}
 
-  document.getElementById('policy-title').textContent = label;
-  document.getElementById('policy-tagline').textContent = meta.tagline || '';
+function renderMediaBox(containerId, media) {
+  var box = document.getElementById(containerId);
+  if (!box) return;
 
-  // Calls the modal from bullet script replacing my old forEach Block.
-  renderBullets(docKey);
+  var src = buildMediaSrc(media);
+  if (!src) {
+    showMediaPlaceholder(box);
+    return;
+  }
 
-  // Media
-  renderMediaBox('policy-media-content', meta.media || null);
+  var caption = media.caption
+    ? '<span class="modal-media-caption">' + escapeHtml(media.caption) + '</span>'
+    : '';
 
-  // --- CONTAINER 2: Fetch from Google Docs via Apps Script ---
-var fullContent = document.getElementById('policy-full-content');
-fullContent.innerHTML = '<span class="doc-loading">Loading document...</span>';
-
-google.script.run
-  .withSuccessHandler(function(result) {
-    if (result.type === 'error') {
-      fullContent.innerHTML =
-        '<span class="doc-error">' + result.message + '</span>';
+  if (media.type === 'gdrive-video') {
+    if (APP_STATE.videoCache[media.id]) {
+      box.innerHTML =
+        '<video controls preload="auto"><source src="' + APP_STATE.videoCache[media.id] + '" type="video/mp4"></video>' + caption;
       return;
     }
 
-    fullContent.innerHTML =
-      '<div class="doc-embed-wrapper">' +
-        '<iframe ' +
-          'src="' + result.url + '" ' +
-          'class="doc-embed-frame" ' +
-          'allowfullscreen ' +
-          'loading="lazy"' +
-        '></iframe>' +
+    box.innerHTML =
+      '<div class="video-loading-box">' +
+      '  <div class="video-loading-spinner"></div>' +
+      '  <span>Preparing video</span>' +
+      '  <div class="video-loading-dots"><span></span><span></span><span></span></div>' +
       '</div>';
-  })
-  .withFailureHandler(function(err) {
-    fullContent.innerHTML =
-      '<span class="doc-error">Failed to load: ' + escapeHtml(err.message) + '</span>';
-  })
-  .getDocContent(docKey);
 
-  // Track in recently viewed
-  addToRecentlyViewed(docKey, label);
+    runServer('getVideoBase64', media.id, function(dataUrl) {
+      APP_STATE.videoCache[media.id] = dataUrl;
+      box.innerHTML =
+        '<video controls preload="auto"><source src="' + dataUrl + '" type="video/mp4"></video>' + caption;
+    }, function() {
+      box.innerHTML =
+        '<div class="video-loading-box"><span class="doc-error">Failed to load video.</span></div>';
+    });
 
-  // Close sidebar on mobile
-  if (window.innerWidth <= 650) {
-    document.querySelector('.sidebar').classList.remove('open');
-    document.getElementById('sidebarOverlay').classList.remove('active');
-    document.body.style.overflow = '';
+    return;
   }
+
+  if (media.type === 'image') {
+    box.innerHTML =
+      '<img src="' + src + '" alt="" class="media-img-zoomable" ' +
+      'onclick="openImageZoom(\'' + escapeJsString(src) + '\',\'' + escapeJsString(media.caption || '') + '\')" />' +
+      caption;
+    return;
+  }
+
+  if (media.type === 'gslides') {
+    var hintId = 'slides-hint-' + containerId;
+    var wrapId = 'slides-wrap-' + containerId;
+
+    box.innerHTML =
+      '<div class="slides-wrapper" id="' + wrapId + '">' +
+      '  <iframe src="' + src + '" allowfullscreen></iframe>' +
+      '  <div class="slides-hint" id="' + hintId + '">Click to interact</div>' +
+      '</div>' + caption;
+
+    (function() {
+      var hint = document.getElementById(hintId);
+      var wrap = document.getElementById(wrapId);
+      if (!hint || !wrap) return;
+
+      function fadeHint() {
+        hint.classList.add('slides-hint-hidden');
+        wrap.removeEventListener('click', fadeHint);
+      }
+
+      wrap.addEventListener('click', fadeHint);
+      setTimeout(fadeHint, 2400);
+    })();
+
+    return;
+  }
+
+  box.innerHTML =
+    '<iframe src="' + src + '" allowfullscreen loading="lazy"></iframe>' + caption;
 }
 
+function switchModalMedia(type) {
+  if (!APP_STATE.currentDualMedia) return;
 
-// ===========================
-// NAV GROUP ACCORDION
-// ===========================
-document.querySelectorAll('.nav-group-header').forEach(function(header) {
-  header.addEventListener('click', function() {
-    var navItems = header.nextElementSibling;
-    header.classList.toggle('expanded');
-    if (navItems) {
-      navItems.style.display = header.classList.contains('expanded') ? 'block' : 'none';
+  var targetMedia = APP_STATE.currentDualMedia[type];
+  if (!targetMedia) return;
+
+  document.getElementById('switcher-btn-slides').classList.toggle('active', type === 'slides');
+  document.getElementById('switcher-btn-video').classList.toggle('active', type === 'video');
+  renderMediaBox('modal-media-container', targetMedia);
+}
+
+function openModal(title, body, media) {
+  var overlay = document.getElementById('bullet-modal-overlay');
+  var container = document.getElementById('modal-media-container');
+  var placeholder = document.getElementById('modal-media-placeholder');
+  var switcher = document.getElementById('modal-media-switcher');
+
+  document.getElementById('modal-title').textContent = title || '';
+  document.getElementById('modal-body').textContent = body || '';
+
+  container.innerHTML = '';
+  container.style.display = 'none';
+  placeholder.style.display = 'none';
+  switcher.style.display = 'none';
+  APP_STATE.currentDualMedia = null;
+
+  if (media && media.slides && media.video) {
+    APP_STATE.currentDualMedia = media;
+    switcher.style.display = 'flex';
+    switchModalMedia(media.default || 'slides');
+    container.style.display = 'block';
+  } else if (media && media.id) {
+    renderMediaBox('modal-media-container', media);
+    container.style.display = 'block';
+  } else {
+    placeholder.style.display = 'flex';
+  }
+
+  overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  var overlay = document.getElementById('bullet-modal-overlay');
+  var container = document.getElementById('modal-media-container');
+  var placeholder = document.getElementById('modal-media-placeholder');
+  var switcher = document.getElementById('modal-media-switcher');
+
+  overlay.classList.remove('active');
+  container.innerHTML = '';
+  container.style.display = 'none';
+  placeholder.style.display = 'none';
+  switcher.style.display = 'none';
+  APP_STATE.currentDualMedia = null;
+  document.body.style.overflow = '';
+}
+
+function loadPolicy(event, docKey, label) {
+  if (event && typeof event.preventDefault === 'function') event.preventDefault();
+
+  markActiveNav(docKey);
+  showView('policy');
+
+  var meta = APP_STATE.policyMeta[docKey] || {};
+  document.getElementById('policy-title').textContent = label;
+  document.getElementById('policy-tagline').textContent = meta.tagline || '';
+
+  renderBullets(docKey);
+  renderMediaBox('policy-media-content', meta.media || null);
+
+  var full = document.getElementById('policy-full-content');
+  full.innerHTML = '<span class="doc-loading">Loading document...</span>';
+
+  runServer('getDocContent', docKey, function(result) {
+    if (!result || result.type === 'error') {
+      full.innerHTML = '<span class="doc-error">' + escapeHtml((result && result.message) || 'Document unavailable') + '</span>';
+      return;
     }
-  });
-});
 
-// ===========================
-// MOBILE SIDEBAR TOGGLE
-// ===========================
-(function() {
-  var toggle  = document.getElementById('sidebarToggle');
+    full.innerHTML =
+      '<div class="doc-embed-wrapper">' +
+      '  <iframe src="' + result.url + '" class="doc-embed-frame" allowfullscreen loading="lazy"></iframe>' +
+      '</div>';
+  }, function(err) {
+    full.innerHTML = '<span class="doc-error">Failed to load: ' + escapeHtml(err.message) + '</span>';
+  });
+
+  addToRecentlyViewed(docKey, label);
+  closeSidebar();
+}
+
+function closeSidebar() {
   var sidebar = document.querySelector('.sidebar');
   var overlay = document.getElementById('sidebarOverlay');
 
-  if (!toggle || !sidebar || !overlay) return;
-
-  function openSidebar() {
-    sidebar.classList.add('open');
-    overlay.classList.add('active');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeSidebar() {
-    sidebar.classList.remove('open');
-    overlay.classList.remove('active');
-    document.body.style.overflow = '';
-  }
-
-  toggle.addEventListener('click', function() {
-    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
-  });
-
-  overlay.addEventListener('click', closeSidebar);
-
-  window.addEventListener('resize', function() {
-    if (window.innerWidth > 650) closeSidebar();
-  });
-})();
-
-// ===========================
-// BUILD SIDEBAR
-// Groups nav items by section
-// Renders accordion groups + items
-// Replaces hardcoded Index.html nav
-// ===========================
-function buildSidebar(navItems) {
-  var container = document.getElementById('nav-groups-container');
-  if (!container) return;
-
-  // ── Group by section ──────────────────────────────
-  var sections   = [];
-  var sectionMap = {};
-
-  navItems.forEach(function(item) {
-    var secKey = item.section    || 'general';
-    var secLbl = item.sectionLabel || 'General';
-
-    if (!sectionMap[secKey]) {
-      sectionMap[secKey] = { label: secLbl, items: [] };
-      sections.push(secKey);
-    }
-
-    sectionMap[secKey].items.push(item);
-  });
-
-  // ── Render ────────────────────────────────────────
-  var html = '';
-
-  sections.forEach(function(secKey) {
-    var sec = sectionMap[secKey];
-
-  html +=
-    '<div class="nav-group">' +
-      '<div class="nav-group-header">' +
-        '<span>' + escapeHtml(sec.label) + '</span>' +
-        '<svg class="nav-chevron" width="14" height="14" viewBox="0 0 24 24" ' +
-            'fill="none" stroke="currentColor" stroke-width="2">' +
-          '<polyline points="9 18 15 12 9 6"/>' +   // ← right-pointing chevron ›
-        '</svg>' +
-      '</div>' +
-      '<div class="nav-items" style="display:none;">';
-
-    sec.items.forEach(function(item) {
-      html +=
-        '<a href="#" class="nav-item" ' +
-            'onclick="loadPolicy(event,\'' + escapeHtml(item.docKey) + '\',\'' + escapeHtml(item.label) + '\')">' +
-          escapeHtml(item.label) +
-        '</a>';
-    });
-
-    html += '</div></div>';
-  });
-
-  container.innerHTML = html;
-
-  // ── Wait one frame for DOM to paint ───────────────
-  // then bind accordion click handlers
-  requestAnimationFrame(function() {
-    bindNavAccordion();
-  });
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('active');
+  document.body.style.overflow = '';
 }
 
-function bindNavAccordion() {
-  document.querySelectorAll('.nav-group-header').forEach(function(header) {
-    header.addEventListener('click', function(e) {
+function openSidebar() {
+  var sidebar = document.querySelector('.sidebar');
+  var overlay = document.getElementById('sidebarOverlay');
 
-      // ── Always resolve to .nav-group-header ───────
-      // even if click lands on inner <span> or <svg>
-      var target   = e.target.closest('.nav-group-header');
-      if (!target) return;
-
-      var navItems = target.nextElementSibling;
-      target.classList.toggle('expanded');
-
-      if (navItems) {
-        navItems.style.display =
-          target.classList.contains('expanded') ? 'block' : 'none';
-      }
-    });
-  });
-}
-
-
-// ===========================
-// RUN SEARCH
-// Called on input event
-// ===========================
-function runSearch(query) {
-  var q = query.trim().toLowerCase();
-
-  if (!q) {
-    closeSearchDropdown();
-    return;
-  }
-
-  var results = SEARCH_INDEX.filter(function(entry) {
-    return entry.search.indexOf(q) !== -1;
-  });
-
-  renderSearchResults(q, results);
-}
-
-// ===========================
-// RENDER SEARCH RESULTS
-// ===========================
-function renderSearchResults(query, results) {
-  var dropdown  = document.getElementById('search-dropdown');
-  var container = document.getElementById('search-results-list');
-  var countEl   = document.getElementById('search-results-count');
-
-  if (!query) {
-    dropdown.style.display = 'none';
-    return;
-  }
-
-  dropdown.style.display = 'block';
-
-  countEl.textContent = results.length
-    ? results.length + ' result' + (results.length > 1 ? 's' : '') + ' for "' + query + '"'
-    : 'No results for "' + query + '"';
-
-  if (!results.length) {
-    container.innerHTML =
-      '<div class="search-empty">' +
-        '<span>No matches found</span>' +
-      '</div>';
-    return;
-  }
-
-  container.innerHTML = results.map(function(r) {
-    var isPolicy = r.type === 'policy';
-    var onclick  = isPolicy
-      ? 'selectSearchResult(event,\'' + r.docKey + '\',\'' + r.label + '\',null)'
-      : 'selectSearchResult(event,\'' + r.docKey + '\',\'' + r.label + '\',\'' + r.title + '\')';
-
-    return [
-      '<a href="#" class="search-result-row" onclick="' + onclick + '">',
-      '  <div class="search-result-text">',
-      '    <span class="search-result-label">' +
-             escapeHtml(isPolicy ? r.label : r.label + ' → ' + r.title) +
-           '</span>',
-      '    <span class="search-result-preview">' + r.preview + '</span>',
-      '  </div>',
-      '  <span class="search-result-tag">' + escapeHtml(isPolicy ? 'Policy' : 'Detail') + '</span>',
-      '</a>'
-    ].join('');
-  }).join('');
-}
-
-// ===========================
-// SELECT A SEARCH RESULT
-// Closes dropdown then navigates
-// ===========================
-function selectSearchResult(event, docKey, label, bulletTitle) {
-  event.preventDefault();
-
-  // Close dropdown
-  closeSearchDropdown();
-
-  // Clear input
-  document.getElementById('searchInput').value = '';
-
-  if (!bulletTitle) {
-    loadPolicy(event, docKey, label);
-  } else {
-    loadPolicyAndOpenBullet(event, docKey, label, bulletTitle);
-  }
+  if (sidebar) sidebar.classList.add('open');
+  if (overlay) overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
 }
 
 function closeSearchDropdown() {
@@ -918,121 +503,247 @@ function closeSearchDropdown() {
   if (dropdown) dropdown.style.display = 'none';
 }
 
-// ===========================
-// LOAD POLICY + OPEN BULLET MODAL
-// For bullet-level search results
-// ===========================
-function loadPolicyAndOpenBullet(event, docKey, label, bulletTitle) {
-  event.preventDefault();
+function renderSearchResults(query, results) {
+  var dropdown = document.getElementById('search-dropdown');
+  var count = document.getElementById('search-results-count');
+  var list = document.getElementById('search-results-list');
 
-  // Load the policy page first
-  loadPolicy(event, docKey, label);
+  if (!dropdown || !count || !list) return;
 
-  // Then find the matching bulletDetail and open its modal
-  var meta    = POLICY_META[docKey] || {};
-  var details = meta.bulletDetails || {};
+  if (!query) {
+    dropdown.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
 
+  dropdown.style.display = 'block';
+  count.textContent = results.length
+    ? results.length + ' result' + (results.length > 1 ? 's' : '') + ' for "' + query + '"'
+    : 'No results for "' + query + '"';
+
+  if (!results.length) {
+    list.innerHTML = '<div class="search-empty">No matches found.</div>';
+    return;
+  }
+
+  list.innerHTML = results.map(function(item) {
+    return [
+      '<a href="#" class="search-result-row" ',
+      'data-search-type="', item.type, '" ',
+      'data-search-doc="', escapeHtml(item.docKey), '" ',
+      'data-search-label="', escapeHtml(item.label), '" ',
+      'data-search-bullet="', escapeHtml(item.bulletTitle || ''), '">',
+      '<span>',
+      '  <span class="search-result-label">', escapeHtml(item.type === 'policy' ? item.label : item.label + ' -> ' + item.title), '</span>',
+      '  <span class="search-result-preview">', escapeHtml(item.preview || ''), '</span>',
+      '</span>',
+      '<span class="search-result-tag">', item.type === 'policy' ? 'Policy' : 'Detail', '</span>',
+      '</a>'
+    ].join('');
+  }).join('');
+}
+
+function runSearch(query) {
+  var q = String(query || '').trim().toLowerCase();
+  if (!q) {
+    closeSearchDropdown();
+    return;
+  }
+
+  var results = APP_STATE.searchIndex.filter(function(item) {
+    return item.search.indexOf(q) !== -1;
+  });
+
+  renderSearchResults(q, results);
+}
+
+function loadPolicyAndOpenBullet(docKey, label, bulletTitle) {
+  loadPolicy(null, docKey, label);
+
+  var details = ((APP_STATE.policyMeta[docKey] || {}).bulletDetails || {});
   Object.keys(details).forEach(function(bulletText) {
     var detail = details[bulletText];
-    if (detail.title === bulletTitle) {
-      // Small delay so policy view renders first
+    if (detail && detail.title === bulletTitle) {
       setTimeout(function() {
         openModal(detail.title, detail.body, detail.media || null);
-      }, 150);
+      }, 140);
     }
   });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-
-  // ── Init gate ──────────────────────────────────────
-  _domReady = true;
-  _tryInit();
-
-  // ── Search input ───────────────────────────────────
-  var input = document.getElementById('searchInput');
-  if (input) {
-    input.addEventListener('input', function() { runSearch(this.value); });
-    input.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        this.value = '';
-        closeSearchDropdown();
-        this.blur();
-      }
-    });
-  }
-
-  // ── Search scroll isolation ────────────────────────
-  var list = document.getElementById('search-results-list');
-  if (list) {
-    list.addEventListener('wheel', function(e) {
-      var atTop    = this.scrollTop === 0;
-      var atBottom = this.scrollTop + this.clientHeight >= this.scrollHeight;
-      if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
-        e.preventDefault();
-      }
-      e.stopPropagation();
-    }, { passive: false });
-  }
-
-});
-
-// ── Sanitize helper — strips all HTML tags and dangerous chars ──
-function sanitizeInput(str) {
-  return String(str)
-    .replace(/&/g,  '&amp;')
-    .replace(/</g,  '&lt;')
-    .replace(/>/g,  '&gt;')
-    .replace(/"/g,  '&quot;')
-    .replace(/'/g,  '&#x27;')
-    .replace(/\//g, '&#x2F;');
-}
-
-
-// ===========================
-// IMAGE ZOOM MODAL
-// ===========================
 function openImageZoom(src, caption) {
   var overlay = document.getElementById('image-zoom-overlay');
-  var img     = document.getElementById('image-zoom-img');
-  var cap     = document.getElementById('image-zoom-caption');
+  var image = document.getElementById('image-zoom-img');
+  var text = document.getElementById('image-zoom-caption');
 
-  img.src           = src;
-  img.alt           = caption || '';
-  cap.textContent   = caption || '';
-  cap.style.display = caption ? 'block' : 'none';
+  image.src = src;
+  image.alt = caption || '';
+  text.textContent = caption || '';
+  text.style.display = caption ? 'block' : 'none';
 
-  // ✅ Reset first in case previous close is mid-transition
-  overlay.classList.remove('active');
-  overlay.style.display = 'flex';
-
+  overlay.classList.add('active');
   document.body.style.overflow = 'hidden';
-
-  // Trigger fade in on next frame
-  requestAnimationFrame(function() {
-    overlay.classList.add('active');
-  });
 }
 
 function closeImageZoom() {
   var overlay = document.getElementById('image-zoom-overlay');
-  overlay.classList.remove('active');
-  document.body.style.overflow = '';
+  var image = document.getElementById('image-zoom-img');
 
-  // ✅ Wait for fade out THEN hide — so overlay stops blocking clicks
-  setTimeout(function() {
-    overlay.style.display = 'none';
-    document.getElementById('image-zoom-img').src = '';
-  }, 200);
+  overlay.classList.remove('active');
+  image.src = '';
+  if (!document.getElementById('bullet-modal-overlay').classList.contains('active')) {
+    document.body.style.overflow = '';
+  }
 }
 
-// Close on Escape
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    var overlay = document.getElementById('image-zoom-overlay');
-    if (overlay && overlay.classList.contains('active')) {
+document.addEventListener('click', function(event) {
+  var groupHeader = event.target.closest('.nav-group-header');
+  if (groupHeader) {
+    groupHeader.classList.toggle('expanded');
+    return;
+  }
+
+  var navLink = event.target.closest('.nav-item[data-doc-key]');
+  if (navLink) {
+    event.preventDefault();
+    loadPolicy(event, navLink.getAttribute('data-doc-key'), navLink.getAttribute('data-doc-label'));
+    return;
+  }
+
+  var recentLink = event.target.closest('.doc-row[data-recent-key]');
+  if (recentLink) {
+    event.preventDefault();
+    loadPolicy(event, recentLink.getAttribute('data-recent-key'), recentLink.getAttribute('data-recent-label'));
+    return;
+  }
+
+  var bullet = event.target.closest('#policy-bullets li[data-bullet-doc]');
+  if (bullet) {
+    var docKey = bullet.getAttribute('data-bullet-doc');
+    var text = bullet.getAttribute('data-bullet-text');
+    var details = ((APP_STATE.policyMeta[docKey] || {}).bulletDetails || {});
+    var detail = details[text];
+
+    if (detail) {
+      openModal(detail.title, detail.body, detail.media || null);
+    }
+    return;
+  }
+
+  var search = event.target.closest('.search-result-row');
+  if (search) {
+    event.preventDefault();
+    var doc = search.getAttribute('data-search-doc');
+    var label = search.getAttribute('data-search-label');
+    var type = search.getAttribute('data-search-type');
+    var bulletTitle = search.getAttribute('data-search-bullet');
+
+    closeSearchDropdown();
+    document.getElementById('searchInput').value = '';
+
+    if (type === 'policy') {
+      loadPolicy(event, doc, label);
+    } else {
+      loadPolicyAndOpenBullet(doc, label, bulletTitle);
+    }
+    return;
+  }
+
+  var modalSwitcher = event.target.closest('[data-modal-media]');
+  if (modalSwitcher) {
+    event.preventDefault();
+    switchModalMedia(modalSwitcher.getAttribute('data-modal-media'));
+    return;
+  }
+
+  if (event.target.id === 'bullet-modal-overlay') {
+    closeModal();
+  }
+});
+
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    closeSearchDropdown();
+
+    var imgOverlay = document.getElementById('image-zoom-overlay');
+    if (imgOverlay && imgOverlay.classList.contains('active')) {
       closeImageZoom();
+      return;
+    }
+
+    var modal = document.getElementById('bullet-modal-overlay');
+    if (modal && modal.classList.contains('active')) {
+      closeModal();
     }
   }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  APP_STATE.domReady = true;
+
+  var input = document.getElementById('searchInput');
+  if (input) {
+    input.addEventListener('input', function() {
+      runSearch(this.value);
+    });
+  }
+
+  var backBtn = document.getElementById('backToHomeBtn');
+  if (backBtn) {
+    backBtn.addEventListener('click', function() {
+      showView('home');
+    });
+  }
+
+  var homeBtn = document.getElementById('brandHomeBtn');
+  if (homeBtn) {
+    homeBtn.addEventListener('click', function() {
+      showView('home');
+      closeSidebar();
+    });
+  }
+
+  var sidebarToggle = document.getElementById('sidebarToggle');
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener('click', function() {
+      var sidebar = document.querySelector('.sidebar');
+      if (sidebar && sidebar.classList.contains('open')) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
+    });
+  }
+
+  var sidebarOverlay = document.getElementById('sidebarOverlay');
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener('click', closeSidebar);
+  }
+
+  window.addEventListener('resize', function() {
+    if (window.innerWidth > 760) closeSidebar();
+  });
+
+  tryInit();
+});
+
+runServer('getPolicyMeta', undefined, function(meta) {
+  APP_STATE.policyMeta = meta || {};
+  APP_STATE.metaReady = true;
+  preloadDriveVideos();
+  tryInit();
+});
+
+runServer('getNavLabels', undefined, function(navItems) {
+  APP_STATE.navItems = navItems || [];
+  APP_STATE.navLabels = {};
+
+  APP_STATE.navItems.forEach(function(item) {
+    APP_STATE.navLabels[item.docKey] = item.label;
+  });
+
+  buildSidebar(APP_STATE.navItems);
+  APP_STATE.navReady = true;
+  tryInit();
 });
 </script>

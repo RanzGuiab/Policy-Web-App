@@ -1,19 +1,14 @@
 // CODE.GS
+// Portfolio-safe backend for a spreadsheet-driven policy portal.
+// Set this to your own Google Sheet ID before deployment.
+var SHEET_ID = 'REPLACE_WITH_SHEET_ID';
 
-// To get started, input your Google Sheet ID in 
-// SHEET_ID. Refer to the "Company_Handbook_Policy" 
-// sheets link/file migrated along with this codebase.
-
-// You change the name of the Google Sheet but always
-// preserve the ID, Tabs, and Columns per tab.
-var SHEET_ID = '1VZy3i_uRU__VQkR11xdQtP9KUSi3jF8ow-dg6eHqQuU'; // appsscript.json handles AuthN after forcing it on Handover.
-
-// FETCH GOOGLE SHEET SCRIPT
+// Open source spreadsheet.
 function getSheet() {
   return SpreadsheetApp.openById(SHEET_ID);
 }
 
-// FETCH GOOGLE DOCS FROM GOOGLE SHEETS
+// Read doc key -> doc ID mapping.
 function getDocs() {
   var rows  = getSheet().getSheetByName('Docs').getDataRange().getValues();
   var docs  = {};
@@ -29,7 +24,7 @@ function getDocs() {
   return docs;
 }
 
-// SIDE BAR NAVIGATION SCRIPT, IS HARDCODED 'NavLabels'.
+// Read sidebar labels and section metadata.
 function getNavLabels() {
   var sheet = getSheet().getSheetByName('NavLabels');
 
@@ -63,7 +58,7 @@ function getNavLabels() {
   return result;
 }
 
-// HARDCODED SHEETS TABS, MUST FOLLOW THE NAME FORMAT. DW, WILL PROVIDE THE SHEET. =)
+// Read policy metadata, bullets, and bullet detail records.
 function getPolicyMeta() {
   var ss = getSheet();
 
@@ -217,9 +212,9 @@ function checkMediaIds(ids) {
 }
 
 function doGet() {
-  return HtmlService.createTemplateFromFile('Index')
+  return HtmlService.createTemplateFromFile('index')
     .evaluate()
-    .setTitle('Company Policies')
+    .setTitle('Policy Atlas Showcase')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
