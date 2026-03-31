@@ -2,6 +2,8 @@
 
 ## Project Origin
 
+<img width="1706" height="894" alt="Screenshot 2026-03-31 at 1 00 36 PM" src="https://github.com/user-attachments/assets/797d1b61-9385-49fc-ab3f-c17e64033d65" />
+
 Policy Manager began as an internal knowledge management system—a comprehensive, searchable portal designed to centralize policy documentation, visual guides, and multimedia resources across an organization. The original implementation used Google Apps Script as the backend runtime, with a Google Sheet as the data source, to leverage existing Google Workspace infrastructure without requiring external hosting or complex server setup.
 
 ## Evolution to Portfolio Showcase
