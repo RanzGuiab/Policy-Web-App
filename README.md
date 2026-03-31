@@ -1,6 +1,7 @@
-# infosec-graphics-website
+# Policy-Admin
 
-A private Google Apps Script-based web application for hosting infosec graphics, promotional materials, and related assets. **This repository must remain PRIVATE.**
+A private Google Apps Script-based web application for hosting infosec graphics, promotional materials, and related assets in a Google Workspace environment. 
+**This branch contins the admin page of the website and is isolated from the main web application branch so it does not change interfere with the main branch**
 
 ## 📋 Project Overview
 
