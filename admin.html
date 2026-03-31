@@ -1,0 +1,2671 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+    :root {
+      --ink-950: #111827;
+      --ink-700: #334155;
+      --ink-500: #64748b;
+      --line: #dbe3ed;
+      --surface: #ffffff;
+      --bg-soft: #f6efe8;
+      --mint: #0f766e;
+      --mint-soft: #d7f5ef;
+      --amber: #f97316;
+      --amber-soft: #ffe8d5;
+      --danger: #b91c1c;
+      --danger-soft: #fee2e2;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background:
+        radial-gradient(1000px 500px at 15% -10%, #ffd9b3 0, transparent 65%),
+        radial-gradient(1000px 500px at 100% 0%, #d4f8f0 0, transparent 70%),
+        var(--bg-soft);
+      color: var(--ink-950);
+      font-size: 14px;
+      overflow-x: hidden;
+    }
+
+    h1,
+    h2,
+    .tab-bar-btn,
+    .section-col-title {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    /* ══════════════════════════════════════
+       HEADER
+    ══════════════════════════════════════ */
+.admin-header {
+  background: rgba(255,255,255,0.85);
+  color: var(--ink-950);
+  padding: 0 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: fixed;        /* was sticky */
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: 56px;
+  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+    .admin-header-left  { display: flex; align-items: center; gap: 12px; }
+    .admin-header h1    { font-size: 17px; font-weight: 700; letter-spacing: 0; }
+    .admin-header-right { display: flex; align-items: center; gap: 8px; }
+
+    /* ══════════════════════════════════════
+       UNSAVED BANNER
+    ══════════════════════════════════════ */
+.unsaved-banner {
+  display: none;
+  position: sticky;       
+  top: 56px;
+  left: 0;
+  right: 0;
+  z-index: 99;
+  background: #fff8ef;
+  border-bottom: 2px solid var(--amber);
+  padding: 9px 24px;
+  font-size: 13px;
+  color: #5f4200;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.unsaved-banner.visible { display: flex; }
+.unsaved-banner-left    { display: flex; align-items: center; gap: 8px; }
+.unsaved-banner-actions { display: flex; gap: 8px; }
+
+    /* ══════════════════════════════════════
+       TAB BAR
+    ══════════════════════════════════════ */
+    .tab-bar {
+      display: flex;
+      background: rgba(255,255,255,0.86);
+      border-bottom: 1px solid var(--line);
+      padding: 0 24px;
+      position: sticky;
+      top: 56px;
+      z-index: 98;
+      backdrop-filter: blur(6px);
+    }
+
+    .unsaved-banner.visible ~ .tab-bar { top: 89px; }
+
+    .tab-bar-btn {
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      padding: 13px 18px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-500);
+      cursor: pointer;
+      transition: color 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .tab-bar-btn:hover  { color: var(--mint); }
+    .tab-bar-btn.active { color: var(--mint); border-bottom-color: var(--mint); }
+
+    /* ══════════════════════════════════════
+       MAIN LAYOUT — grid + side panel
+    ══════════════════════════════════════ */
+    .main-layout {
+      display: flex;
+      min-height: calc(100vh - 56px);
+    }
+
+    .main-layout.panel-open { padding-right: 420px; }
+
+    /* ══════════════════════════════════════
+       PAGE CONTENT
+    ══════════════════════════════════════ */
+    .page-content {
+      flex: 1;
+      padding: 24px;
+      min-width: 0;
+    }
+
+    /* ══════════════════════════════════════
+       POLICIES GRID
+    ══════════════════════════════════════ */
+    .policies-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .policies-toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .toolbar-stat {
+      font-size: 12px;
+      color: var(--ink-700);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 4px 12px;
+    }
+
+    /* Section columns wrapper */
+    .sections-scroll {
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+
+    .sections-columns {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      min-width: min-content;
+    }
+
+    /* Individual section column */
+    .section-col {
+      width: 220px;
+      flex-shrink: 0;
+    }
+
+    .section-col-header {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px 8px 0 0;
+      border-bottom: 3px solid var(--mint);
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .section-col-header.unsectioned { border-bottom-color: #ea4335; }
+
+    .section-col-title {
+      flex: 1;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #3c4043;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .section-col-count {
+      font-size: 10px;
+      background: var(--mint-soft);
+      color: var(--mint);
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .section-col-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .section-col-action-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #80868b;
+      padding: 2px 4px;
+      font-size: 11px;
+      border-radius: 3px;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .section-col-action-btn:hover {
+      color: var(--mint);
+      background: var(--mint-soft);
+    }
+
+    /* Policy card in grid */
+    .policy-grid-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: box-shadow 0.15s, border-color 0.15s, transform 0.1s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .policy-grid-card:hover {
+      box-shadow: 0 8px 20px rgba(17,24,39,0.1);
+      border-color: var(--amber);
+      transform: translateY(-1px);
+    }
+
+    .policy-grid-card.active {
+      border-color: var(--mint);
+      box-shadow: 0 0 0 2px rgba(15,118,110,0.2);
+    }
+
+    .policy-grid-card-inner { padding: 11px 12px; }
+
+    .policy-grid-card-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-950);
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .policy-grid-card-key {
+      font-size: 10px;
+      color: var(--ink-500);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 6px;
+    }
+
+    .policy-grid-card-status {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .status-chip {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-weight: 500;
+    }
+
+    .status-chip-ok      { background: var(--mint-soft); color: var(--mint); }
+    .status-chip-warn    { background: var(--danger-soft); color: var(--danger); }
+    .status-chip-neutral { background: #eef2f7; color: var(--ink-700); }
+
+    .policy-grid-card-accent {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--mint);
+      border-radius: 8px 0 0 8px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .policy-grid-card:hover .policy-grid-card-accent,
+    .policy-grid-card.active .policy-grid-card-accent { opacity: 1; }
+
+    /* Add policy card */
+    .policy-grid-add {
+      border: 2px dashed var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      color: var(--ink-500);
+      font-size: 12px;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+      background: none;
+      width: 100%;
+    }
+
+    .policy-grid-add:hover { border-color: var(--amber); color: #9a3412; }
+
+    /* ══════════════════════════════════════
+       SIDE PANEL
+    ══════════════════════════════════════ */
+
+
+    .side-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 440px;
+      background: var(--surface);
+      border-left: 1px solid var(--line);
+      z-index: 250;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+      box-shadow: -8px 0 32px rgba(0,0,0,0.18);
+    }
+
+    .side-panel-backdrop {
+      display: none;
+      position: fixed;
+      background: rgba(0,0,0,0.35);
+      z-index: 998;
+      transition: opacity 0.3s;
+    }
+
+    .side-panel-backdrop.open { display: block; }
+
+    .side-panel.open { transform: translateX(0); }
+
+    /* Panel sits above tab bar and unsaved banner */
+    @media (max-width: 900px) {
+      .side-panel { width: 100%; }
+    }
+
+    .side-panel.open { transform: translateX(0); }
+
+    .side-panel-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      flex-shrink: 0;
+      background: #f8fafc;
+    }
+
+    .side-panel-header-info { flex: 1; min-width: 0; }
+
+    .side-panel-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink-950);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .side-panel-subtitle {
+      font-size: 11px;
+      color: var(--ink-500);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .side-panel-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #5f6368;
+      font-size: 16px;
+      padding: 4px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+
+    .side-panel-close:hover { background: #eef2f7; color: var(--ink-950); }
+
+    .side-panel-actions {
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .side-panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+    }
+
+    /* Inner sections inside panel */
+    .panel-section {
+      margin-bottom: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .panel-section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      background: #f8fafc;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid transparent;
+      transition: background 0.15s;
+    }
+
+    .panel-section-header:hover { background: #eef2f7; }
+    .panel-section-header.open  { border-bottom-color: var(--line); }
+
+    .panel-section-chevron {
+      color: var(--ink-500);
+      transition: transform 0.2s;
+      flex-shrink: 0;
+      font-size: 11px;
+    }
+
+    .panel-section-chevron.open { transform: rotate(90deg); }
+
+    .panel-section-title {
+      flex: 1;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--ink-700);
+    }
+
+    .panel-section-controls {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .panel-section-body { display: none; padding: 10px 12px; }
+    .panel-section-body.open { display: block; }
+
+    /* ══════════════════════════════════════
+       ACCOUNTS + HELP CONTENT TABS
+    ═══════════════════════════════���══════ */
+    .data-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .data-card-header {
+      padding: 12px 16px;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--line);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--ink-700);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .data-card-body { padding: 10px 16px 16px; }
+
+    .help-entry-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid #edf2f7;
+    }
+
+    .help-entry-row:last-child { border-bottom: none; }
+
+    .help-entry-key-badge {
+      font-size: 10px;
+      font-weight: 700;
+      background: var(--mint-soft);
+      color: var(--mint);
+      padding: 3px 8px;
+      border-radius: 4px;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    .help-entry-info { flex: 1; min-width: 0; }
+    .help-entry-name { font-size: 13px; font-weight: 500; }
+    .help-entry-desc { font-size: 11px; color: var(--ink-500); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ══════════════════════════════════════
+       ITEM ROWS (shared)
+    ══════════════════════════════════════ */
+    .item-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 8px;
+      background: #f8fafc;
+      border: 1px solid #edf2f7;
+      border-radius: 8px;
+      margin-bottom: 5px;
+      font-size: 12px;
+    }
+
+    .item-row:last-child { margin-bottom: 0; }
+    .item-text           { flex: 1; word-break: break-all; line-height: 1.4; }
+    .item-actions        { display: flex; gap: 4px; flex-shrink: 0; }
+
+    /* ══════════════════════════════════════
+       BUTTONS
+    ══════════════════════════════════════ */
+    .btn {
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 5px 10px;
+      font-weight: 500;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .btn-primary   { background: var(--mint); color: white; }
+    .btn-secondary { background: #eef2f7; color: var(--ink-950); }
+    .btn-danger    { background: var(--danger-soft); color: var(--danger); }
+    .btn-add       { background: var(--mint-soft); color: var(--mint); font-size: 11px; }
+    .btn-white     { background: white; color: var(--mint); border: 1px solid var(--line); }
+    .btn-ghost     { background: white; color: var(--ink-950); border: 1px solid var(--line); }
+    .btn:hover     { opacity: 0.85; }
+    .btn:disabled  { opacity: 0.45; cursor: not-allowed; }
+
+    .help-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #bdc1c6;
+      padding: 0 3px;
+      font-size: 12px;
+      line-height: 1;
+      transition: color 0.15s;
+      flex-shrink: 0;
+    }
+
+    .help-btn:hover { color: var(--mint); }
+
+    /* ══════════════════════════════════════
+       MODALS
+    ══════════════════════════════════════ */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 400;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    #helpModal {
+    z-index: 999;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 10px;
+      width: 540px;
+      max-width: 95vw;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+      z-index: 499;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+      animation: modalSlideIn 0.2s ease;
+    }
+
+    @keyframes modalSlideIn {
+        from { transform: translateY(16px); opacity: 0; }
+        to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    .modal h2 { font-size: 16px; font-weight: 700; margin-bottom: 20px; color: var(--ink-950); }
+
+    .rename-title-header {
+      display: flex; 
+    }
+
+    .form-group { margin-bottom: 14px; }
+
+    .form-group label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-700);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .form-hint {
+      font-size: 11px;
+      color: var(--ink-500);
+      margin-bottom: 5px;
+      line-height: 1.5;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      color: var(--ink-950);
+      transition: border-color 0.15s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { border-color: var(--amber); box-shadow: 0 0 0 3px rgba(249,115,22,0.15); }
+
+    .form-group input:disabled  { background: #eef2f7; color: var(--ink-500); }
+    .form-group textarea        { resize: vertical; min-height: 80px; }
+    .form-group input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 20px;
+      padding-top: 14px;
+      border-top: 1px solid #edf2f7;
+    }
+
+    .fullscreen-loader {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.94);
+      z-index: 500;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink-700);
+      font-size: 14px;
+      gap: 4px;
+    }
+
+    .fullscreen-loader .spinner {
+      width: 32px;
+      height: 32px;
+      margin-bottom: 12px;
+    }
+
+    /* ══════════════════════════════════════
+       HELP MODAL
+    ══════════════════════════════════════ */
+    .help-img-wrap {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      background: #f8fafc;
+      border: 2px dashed var(--line);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .help-img-wrap img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+
+    .help-img-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: var(--ink-500);
+      font-size: 12px;
+      text-align: center;
+      padding: 16px;
+    }
+
+    .help-block-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--ink-700);
+      margin-bottom: 6px;
+    }
+
+    .help-desc { font-size: 13px; color: var(--ink-700); line-height: 1.65; margin-bottom: 16px; }
+
+    .help-fields { list-style: none; padding: 0; }
+
+    .help-fields li {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      padding: 7px 0;
+      border-bottom: 1px solid #edf2f7;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .help-fields li:last-child { border-bottom: none; }
+
+    .help-field-label {
+      font-weight: 600;
+      color: var(--mint);
+      min-width: 110px;
+      white-space: nowrap;
+    }
+
+    .help-tag {
+      display: inline-block;
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 10px;
+      font-weight: 600;
+      margin-left: 4px;
+    }
+
+    .help-tag-req { background: var(--danger-soft); color: var(--danger); }
+    .help-tag-opt { background: var(--mint-soft); color: var(--mint); }
+
+    /* ══════════════════════════════════════
+       MISC
+    ══════════════════════════════════════ */
+    .loading-wrap {
+      text-align: center;
+      padding: 60px 16px;
+      color: var(--ink-700);
+    }
+
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid var(--line);
+      border-top-color: var(--amber);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 14px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .status-ok      { color: var(--mint); }
+    .status-missing { color: var(--danger); font-style: italic; }
+    .empty-hint     { font-size: 12px; color: var(--ink-500); padding: 8px 0 4px; }
+
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: #1f2937;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 999;
+      max-width: 340px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+
+    .toast.show  { opacity: 1; }
+    .toast.error { background: var(--danger); }
+    .toast.ok    { background: var(--mint); }
+
+    /* ══════════════════════════════════════
+       RESPONSIVE — collapse to 2 cols
+    ══════════════════════════════════════ */
+    @media (max-width: 900px) {
+      .main-layout.panel-open { padding-right: 0; }
+      .side-panel { width: 100%; top: 0; z-index: 250; }
+    }
+
+    /* CSS for the Image Zoom Modal */
+    #image-zoom-overlay {
+      display: none; /* Hidden by default */
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      cursor: zoom-out;
+    }
+
+    #image-zoom-overlay.active {
+      opacity: 1;
+    }
+
+    #image-zoom-img {
+      max-width: 90%;
+      max-height: 80%;
+      object-fit: contain;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
+    #image-zoom-caption {
+      margin-top: 15px;
+      color: #ccc;
+      font-size: 16px;
+      text-align: center;
+      max-width: 80%;
+    }
+
+    .image-zoom-close {
+      position: absolute;
+      top: 20px;
+      right: 35px;
+      color: #f1f1f1;
+      font-size: 40px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .image-zoom-close:hover,
+    .image-zoom-close:focus {
+      color: #bbb;
+      text-decoration: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="fullscreen-loader" id="fullscreenLoader" style="display:flex;">
+  <div class="spinner"></div>
+  <span>Loading Policy Admin...</span>
+</div>
+
+<!-- ══════════════════════════════════════
+     HEADER
+══════════════════════════════════════ -->
+<div class="admin-header">
+  <div class="admin-header-left">
+    <h1>Policy Admin</h1>
+  </div>
+  <div class="admin-header-right">
+    <button class="btn btn-ghost" onclick="openSectionModal()">
+      <i class="fa fa-layer-group"></i> Sections
+    </button>
+    <button class="btn btn-ghost" onclick="openNewPolicyModal()">
+      <i class="fa fa-plus"></i> New Policy
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     UNSAVED BANNER
+══════════════════════════════════════ -->
+<div class="unsaved-banner" id="unsavedBanner">
+  <div class="unsaved-banner-left">
+    <i class="fa fa-triangle-exclamation"></i>
+    <span>You have unsaved changes.</span>
+  </div>
+  <div class="unsaved-banner-actions">
+    <button class="btn btn-secondary" onclick="discardChanges()">Discard</button>
+    <button class="btn btn-primary"   onclick="commitAllChanges()">Save All</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     TAB BAR
+══════════════════════════════════════ -->
+<div class="tab-bar">
+  <button class="tab-bar-btn active" onclick="switchTab('policies')" id="tab-policies">
+    <i class="fa fa-file-lines"></i> Policies
+  </button>
+  <button class="tab-bar-btn" onclick="switchTab('accounts')" id="tab-accounts">
+    <i class="fa fa-users"></i> Accounts
+  </button>
+  <button class="tab-bar-btn" onclick="switchTab('helpcontent')" id="tab-helpcontent">
+    <i class="fa fa-circle-question"></i> Help Content
+  </button>
+</div>
+
+<!-- ══════════════════════════════════════
+     MAIN LAYOUT
+══════════════════════════════════════ -->
+<div class="main-layout" id="mainLayout">
+  <div class="page-content" id="pageContent">
+    <div class="loading-wrap"><div class="spinner"></div>Loading...</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SIDE PANEL
+══════════════════════════════════════ -->
+<div class="side-panel-backdrop" id="sidePanelBackdrop" onclick="closePanel()"></div>
+<div class="side-panel" id="sidePanel">
+
+  <div class="side-panel-header">
+    <div class="side-panel-header-info">
+      <div class="side-panel-title"  id="panelTitle">Policy</div>
+      <div class="side-panel-subtitle" id="panelSubtitle"></div>
+    </div>
+    <button class="side-panel-close" onclick="closePanel()">
+      <i class="fa fa-xmark"></i>
+    </button>
+  </div>
+
+  <div class="side-panel-actions">
+    <button class="btn btn-secondary" onclick="openEditPolicyFromPanel()">
+      <i class="fa fa-pen"></i> Edit Policy
+    </button>
+    <button class="btn btn-danger" onclick="stageDeletePolicyFromPanel()">
+      <i class="fa fa-trash"></i> Delete
+    </button>
+  </div>
+
+  <div class="side-panel-body" id="panelBody">
+    <!-- Rendered by renderPanel() -->
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════
+     TOAST
+══════════════════════════════════════ -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════
+     MODALS
+══════════════════════════════════════ -->
+
+<!-- Help Modal -->
+<div class="modal-backdrop" id="helpModal">
+  <div class="modal" style="max-width:520px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+      <h2 id="helpModalTitle" style="margin-bottom:0;"></h2>
+      <button onclick="closeModal('helpModal')"
+              style="background:none;border:none;cursor:pointer;color:#80868b;font-size:18px;">
+        <i class="fa fa-xmark"></i>
+      </button>
+    </div>
+    <div class="help-img-wrap" id="helpImgWrap">
+      <div class="help-img-placeholder" id="helpImgPlaceholder">
+        <i class="fa fa-image" style="font-size:28px;color:#dadce0;"></i>
+        <span>No image set</span>
+        <span style="font-size:10px;color:#bdc1c6;">Add a URL in Help Content tab → img_url</span>
+      </div>
+      
+      <!-- ADDED: onclick handler and cursor styling for the zoom effect -->
+      <img id="helpModalImg" 
+           src="" 
+           alt="" 
+           style="display:none; cursor: zoom-in; width: 100%; object-fit: cover;" 
+           onclick="openImageZoom(this.src, this.alt)">
+           
+    </div>
+    <div class="help-block-title">What is this?</div>
+    <p class="help-desc" id="helpModalDesc"></p>
+    <div id="helpModalFieldsWrap">
+      <div class="help-block-title">Fields</div>
+      <ul class="help-fields" id="helpModalFields"></ul>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeModal('helpModal')">Got it</button>
+    </div>
+  </div>
+</div>
+
+<!-- Image Zoom Overlay -->
+<div id="image-zoom-overlay" onclick="closeImageZoom()">
+  <span class="image-zoom-close" onclick="closeImageZoom()">&times;</span>
+  <img id="image-zoom-img" src="" alt="">
+  <div id="image-zoom-caption"></div>
+</div>
+
+<!-- Section Manager Modal -->
+<div class="modal-backdrop" id="sectionModal">
+  <div class="modal">
+    <h2><i class="fa fa-layer-group"></i> Manage Sections</h2>
+    <div id="sectionListEdit" style="margin-bottom:16px;"></div>
+    <div style="border-top:1px solid #f1f3f4;padding-top:14px;">
+      <p style="font-size:11px;font-weight:700;color:#5f6368;text-transform:uppercase;
+                letter-spacing:0.4px;margin-bottom:10px;">Add New Section</p>
+      <div class="form-group">
+        <label>Section Key</label>
+        <div class="form-hint">Lowercase, numbers, underscores. Example: security</div>
+        <input type="text" id="new_secKey" placeholder="e.g. security" maxlength="40">
+      </div>
+      <div class="form-group">
+        <label>Section Label</label>
+        <input type="text" id="new_secLabel" placeholder="e.g. Security & Compliance" maxlength="80">
+      </div>
+      <button class="btn btn-primary" onclick="addSection()">Add Section</button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('sectionModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Policy Modal -->
+<div class="modal-backdrop" id="policyModal">
+  <div class="modal" style="z-index: 500 !important;">
+    <h2 id="policyModalTitle">New Policy</h2>
+    <div class="form-group">
+      <label>Policy Key
+        <button class="help-btn" onclick="openHelp('policy_dockey')"><i class="fa fa-circle-question"></i></button>
+      </label>
+      <div class="form-hint">Lowercase, numbers, underscores. Max 60. ⚠️ NEVER CHANGE AFTER SAVING.</div>
+      <input type="text" id="f_docKey" placeholder="health_and_safety" maxlength="60">
+    </div>
+    <div class="form-group">
+      <label>Tagline
+        <button class="help-btn" onclick="openHelp('policy_tagline')"><i class="fa fa-circle-question"></i></button>
+      </label>
+      <div class="form-hint">One-line description. Max 160 chars.</div>
+      <input type="text" id="f_tagline" placeholder="Everything you need to know about..." maxlength="160">
+    </div>
+    <div class="form-group">
+      <label>Media Type
+        <button class="help-btn" onclick="openHelp('policy_media')"><i class="fa fa-circle-question"></i></button>
+      </label>
+      <select id="f_mediaType" onchange="togglePolicyMedia()">
+        <option value="none">None</option>
+        <option value="image">Image (Drive)</option>
+        <option value="gslides">Google Slides</option>
+        <option value="gdrive-video">Video (Drive)</option>
+        <option value="youtube">YouTube</option>
+        <!-- <option value="audio">Audio (Drive)</option> -->
+      </select>
+    </div>
+    <div id="policyMediaIdGroup" style="display:none">
+      <div class="form-group">
+        <label>Media ID</label>
+        <div class="form-hint" id="policyMediaIdHint"></div>
+        <input type="text" id="f_mediaId" placeholder="Paste file ID here" maxlength="200">
+      </div>
+      <div class="form-group">
+        <label>Media Caption (optional)</label>
+        <input type="text" id="f_mediaCaption" placeholder="e.g. Watch before reading" maxlength="200">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cancelModal('policyModal')">Cancel</button>
+      <button class="btn btn-primary" id="policySubmitBtn" onclick="stagePolicy()"><i class="fa fa-plus"></i>Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Nav Label Modal -->
+<div class="modal-backdrop" id="navModal">
+  <div class="modal">
+    <h2>Sidebar Navigation Entry</h2>
+    <input type="hidden" id="nav_docKey">
+    <div class="form-group">
+      <label>Sidebar Label
+        <button class="help-btn" onclick="openHelp('nav')"><i class="fa fa-circle-question"></i></button>
+      </label>
+      <div class="form-hint">What users see and click. Max 80 chars.</div>
+      <input type="text" id="nav_label" placeholder="Health & Safety" maxlength="80">
+    </div>
+    <div class="form-group">
+      <label>Section</label>
+      <select id="nav_section" onchange="onNavSectionChange()">
+        <option value="">-- Select a section --</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Section Label (auto-filled)</label>
+      <input type="text" id="nav_sectionLabel" disabled>
+    </div>
+    <div class="form-group">
+      <label>Order
+        <button class="help-btn" onclick="openHelp('nav_order')"><i class="fa fa-circle-question"></i></button>
+      </label>
+      <div class="form-hint">Whole number 1–999. Lower = higher in sidebar.</div>
+      <input type="number" id="nav_order" min="1" max="999" step="1" placeholder="e.g. 5">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cancelModal('navModal')">Cancel</button>
+      <button class="btn btn-primary" id="navSubmitBtn" onclick="stageNavLabel()"><i class="fa fa-plus"></i>Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Doc ID Modal -->
+<div class="modal-backdrop" id="docModal">
+  <div class="modal">
+    <h2>Full Policy Document</h2>
+    <input type="hidden" id="doc_docKey">
+    <div class="form-group">
+      <label>Google Doc ID
+        <button class="help-btn" onclick="openHelp('doc')"><i class="fa fa-circle-question"></i></button>
+      </label>
+      <div class="form-hint">
+        From the Doc URL: docs.google.com/document/d/<strong>PASTE THIS</strong>/edit<br>
+        ⚠️ Must be shared as Viewer with anyone in domain.
+      </div>
+      <input type="text" id="doc_docId" placeholder="Paste Doc ID here" maxlength="200">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cancelModal('docModal')">Cancel</button>
+      <button class="btn btn-primary" id="docSubmitBtn" onclick="stageDoc()"><i class="fa fa-plus"></i>Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bullet Modal -->
+<div class="modal-backdrop" id="bulletModal">
+  <div class="modal">
+    <h2 id="bulletModalTitle">Add Bullet</h2>
+    <input type="hidden" id="b_docKey">
+    <input type="hidden" id="b_rowIndex">
+    <div class="form-group">
+      <label>Bullet Text
+        <button class="help-btn" onclick="openHelp('bul')"><i class="fa fa-circle-question"></i></button>
+      </label>
+      <div class="form-hint">Shown on the policy page. ⚠️ Edit here = update Bullet Detail too. Max 200.</div>
+      <input type="text" id="b_bulletText" placeholder="e.g. How we handle data requests" maxlength="200">
+    </div>
+    <div class="form-group">
+      <label>Order
+        <button class="help-btn" onclick="openHelp('bul_order')"><i class="fa fa-circle-question"></i></button>
+      </label>
+      <div class="form-hint">Whole number 1–999. Lower = first.</div>
+      <input type="number" id="b_order" min="1" max="999" step="1" value="1">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cancelModal('bulletModal')">Cancel</button>
+      <button class="btn btn-primary" id="bulletSubmitBtn" onclick="stageBullet()"><i class="fa fa-plus"></i>Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bullet Detail Modal -->
+<div class="modal-backdrop" id="detailModal">
+  <div class="modal">
+    <h2 id="detailModalTitle">Add Bullet Detail</h2>
+    <input type="hidden" id="d_docKey">
+    <input type="hidden" id="d_rowIndex">
+    <div class="form-group">
+      <label>Bullet Text
+        <button class="help-btn" onclick="openHelp('det')"><i class="fa fa-circle-question"></i></button>
+      </label>
+      <div class="form-hint">Must match a bullet exactly. ⚠️ Mismatches = modal will not open.</div>
+      <select id="d_bulletText"></select>
+    </div>
+    <div class="form-group">
+      <label>Modal Title
+        <button class="help-btn" onclick="openHelp('det_title')"><i class="fa fa-circle-question"></i></button>
+      </label>
+      <input type="text" id="d_title" placeholder="e.g. Handling Data Requests" maxlength="120">
+    </div>
+    <div class="form-group">
+      <label>Modal Body
+        <button class="help-btn" onclick="openHelp('det_body')"><i class="fa fa-circle-question"></i></button>
+      </label>
+      <div class="form-hint">Plain text only. Max 2000 chars.</div>
+      <textarea id="d_body" placeholder="Explain the policy detail here..." maxlength="2000"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Media Type
+        <button class="help-btn" onclick="openHelp('det_media')"><i class="fa fa-circle-question"></i></button>
+      </label>
+      <select id="d_mediaType" onchange="toggleDetailMedia()">
+        <option value="none">None</option>
+        <option value="image">Image (Drive)</option>
+        <option value="gslides">Google Slides</option>
+        <option value="gdrive-video">Video (Drive)</option>
+        <option value="youtube">YouTube</option>
+        <!-- <option value="audio">Audio (Drive)</option> -->
+        <option value="dual">Dual (Slides + Video)</option>
+      </select>
+    </div>
+    <div id="d_singleFields" style="display:none">
+      <div class="form-group">
+        <label>Media ID</label>
+        <div class="form-hint" id="d_mediaIdHint"></div>
+        <input type="text" id="d_mediaId" placeholder="Paste file ID" maxlength="200">
+      </div>
+      <div class="form-group">
+        <label>Media Caption (optional)</label>
+        <input type="text" id="d_mediaCaption" maxlength="200">
+      </div>
+    </div>
+    <div id="d_dualFields" style="display:none">
+      <div class="form-group">
+        <label>Default Tab</label>
+        <select id="d_mediaDefault">
+          <option value="slides">Slides</option>
+          <option value="video">Video</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Google Slides ID</label>
+        <input type="text" id="d_slidesId" placeholder="Paste Slides ID" maxlength="200">
+      </div>
+      <div class="form-group">
+        <label>Video Type</label>
+        <select id="d_videoType">
+          <option value="gdrive-video">Drive Video</option>
+          <option value="youtube">YouTube</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Video ID</label>
+        <input type="text" id="d_videoId" placeholder="Paste video ID" maxlength="200">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cancelModal('detailModal')">Cancel</button>
+      <button class="btn btn-primary" id="detailSubmitBtn" onclick="stageDetail()"><i class="fa fa-plus"></i>Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Account Modal -->
+<div class="modal-backdrop" id="accountModal">
+  <div class="modal" style="max-width:420px;">
+    <h2 id="accountModalTitle">Add Account</h2>
+    <div class="form-group">
+      <label>Email Address</label>
+      <div class="form-hint">Must be a Workspace domain email.</div>
+      <input type="email" id="acc_email" placeholder="user@company.com" maxlength="120">
+    </div>
+    <div class="form-group">
+      <label>Display Name (optional)</label>
+      <input type="text" id="acc_displayName" placeholder="e.g. InfoSec Officer" maxlength="80">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cancelModal('accountModal')">Cancel</button>
+      <button class="btn btn-primary" id="accountSubmitBtn" onclick="submitAccount()">Save Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- Help Entry Edit Modal -->
+<div class="modal-backdrop" id="helpEditModal">
+  <div class="modal" style="max-width:560px;">
+    <h2 id="helpEditModalTitle">Edit Help Content</h2>
+    <div class="form-group">
+      <label>Key (read-only)</label>
+      <input type="text" id="he_key" disabled>
+    </div>
+    <div class="form-group">
+      <label>Title</label>
+      <input type="text" id="he_title" maxlength="80" disabled>
+    </div>
+    <div class="form-group">
+      <label>Image / GIF URL</label>
+      <div class="form-hint">
+        Direct image URL or Drive share link.<br>
+        Drive format: <code>https://drive.google.com/uc?export=view&amp;id=FILE_ID</code>
+      </div>
+      <input type="text" id="he_img" placeholder="https://..." maxlength="500">
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="he_desc" maxlength="1000" style="min-height:80px;"></textarea>
+    </div>
+    <div style="margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;color:#5f6368;text-transform:uppercase;
+                  letter-spacing:0.3px;margin-bottom:8px;">Fields</div>
+      <div id="he_fieldsContainer"></div>
+      <button class="btn btn-add" style="margin-top:6px;" onclick="addHelpField()">
+        <i class="fa fa-plus"></i> Add Field
+      </button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cancelModal('helpEditModal')">Cancel</button>
+      <button class="btn btn-primary" id="helpEditSubmitBtn" onclick="submitHelpEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-backdrop" id="deleteModal">
+  <div class="modal" style="max-width:420px;">
+    <h2 id="deleteModalTitle">Confirm Delete</h2>
+    <p id="deleteModalMessage"
+       style="font-size:13px;color:#5f6368;line-height:1.6;margin-bottom:8px;"></p>
+    <p style="font-size:12px;color:#c5221f;font-weight:500;">
+      This saves the deletion. Nothing is written until you click Save All.
+    </p>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('deleteModal')">Cancel</button>
+      <button class="btn btn-danger" id="deleteModalConfirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Save Summary Modal -->
+<div class="modal-backdrop" id="saveModal">
+  <div class="modal" style="max-width:480px;">
+    <h2>Save Changes</h2>
+    <p style="font-size:12px;color:#5f6368;margin-bottom:14px;">
+      The following tabs will be rewritten in the Sheet:
+    </p>
+    <div id="saveSummaryList"></div>
+    <p style="font-size:11px;color:#80868b;margin-top:12px;">
+      Tabs not listed are unchanged and will not be touched.
+    </p>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('saveModal')">Cancel</button>
+      <button class="btn btn-primary" id="saveModalConfirmBtn" onclick="executeCommit()">Confirm Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Discard Modal -->
+<div class="modal-backdrop" id="discardModal">
+  <div class="modal" style="max-width:400px;">
+    <h2>Discard Changes?</h2>
+    <p style="font-size:13px;color:#5f6368;margin-bottom:8px;">
+      All unsaved changes will be lost and the page will revert to the last saved state.
+    </p>
+    <p style="font-size:13px;color:#c5221f;font-weight:500;">This cannot be undone.</p>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('discardModal')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDiscard()">Discard Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rename Section Modal -->
+<div class="modal-backdrop" id="renameSectionModal">
+  <div class="modal" style="max-width:400px;">
+    <div class="rename-title-header">
+    <h2 style="width:fit-content !important;">Rename Section</h2>
+    </div>
+    <input type="hidden" id="rename_secKey">
+    <div class="form-group">
+      <label>New Label</label>
+      <input type="text" id="rename_secLabel" maxlength="80" placeholder="e.g. Security & Compliance">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('renameSectionModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmRenameSection()">Rename</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCRIPT
+══════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ── Limits ─────────────────────────────
+var LIMITS = {
+  docKey:60,tagline:160,label:80,
+  sectionKey:40,sectionLabel:80,
+  mediaId:200,caption:200,title:120,body:2000,
+  orderMin:1,orderMax:999,
+  maxPolicies:200,maxBullets:50,maxDetails:50,
+  maxSections:20,maxAccounts:50
+};
+
+var MEDIA_HINTS = {
+  'image':        'Drive file ID — drive.google.com/file/d/[ID]/view',
+  'gslides':      'Slides ID — docs.google.com/presentation/d/[ID]/edit',
+  'gdrive-video': 'Drive file ID — drive.google.com/file/d/[ID]/view',
+  'youtube':      'YouTube video ID — youtube.com/watch?v=[ID]',
+  'audio':        'Drive file ID — drive.google.com/file/d/[ID]/view'
+};
+
+var TAB_LABELS = {
+  policies:'Policies',docs:'Docs',
+  navLabels:'Nav Labels',bullets:'Bullets',
+  bulletDetails:'Bullet Details'
+};
+
+// ── State ───────────────────────────────
+var _live          = null;
+var _stage         = null;
+var _activeTab     = 'policies';
+var _activePolicyKey = null;
+var _pendingDelete = null;
+var _pendingDiff   = null;
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', loadFromServer);
+
+function loadFromServer() {
+  // Full screen loader is already visible via HTML
+  // pageContent shows nothing until data arrives
+  document.getElementById('pageContent').innerHTML = '';
+
+  google.script.run
+    .withSuccessHandler(function(data) {
+      data.sections = deriveSections(data.navLabels);
+      _live  = deepClone(data);
+      _stage = deepClone(data);
+
+      // Hide full screen loader
+      var loader = document.getElementById('fullscreenLoader');
+      if (loader) loader.style.display = 'none';
+
+      renderAll();
+    })
+    .withFailureHandler(function(err) {
+      var loader = document.getElementById('fullscreenLoader');
+      if (loader) {
+        loader.innerHTML =
+          '<i class="fa fa-triangle-exclamation" style="font-size:28px;color:#c5221f;margin-bottom:12px;"></i>' +
+          '<span style="color:#c5221f;font-weight:500;">Failed to load</span>' +
+          '<span style="font-size:12px;color:#80868b;margin-top:4px;">' + esc(err.message) + '</span>' +
+          '<button class="btn btn-primary" style="margin-top:16px;" onclick="loadFromServer()">' +
+            '<i class="fa fa-rotate-right"></i> Retry</button>';
+      }
+    })
+    .getAdminData();
+}
+
+// ════════════════════════════════════════
+// TAB SWITCHING
+// ════════════════════════════════════════
+
+function switchTab(tab) {
+  _activeTab = tab;
+  document.querySelectorAll('.tab-bar-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.id === 'tab-' + tab);
+  });
+  if (tab !== 'policies') closePanel();
+  renderAll();
+}
+
+// ════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════
+
+function toDirectImageUrl(url) {
+  if (!url) return null;
+  
+  // Handle Google Drive links
+  if (url.includes('drive.google.com')) {
+    // Extract file ID from Google Drive URL
+    var fileIdMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    if (fileIdMatch && fileIdMatch[1]) {
+      // Use Google Drive thumbnail API with size parameter
+      return 'https://drive.google.com/thumbnail?id=' + fileIdMatch[1] + '&sz=w1000';
+    }
+  }
+  
+  // Return URL as-is if it's already a direct image URL
+  return url;
+}
+
+function renderAll() {
+  if (_activeTab === 'policies')         renderPoliciesTab();
+  else if (_activeTab === 'accounts')    renderAccountsTab();
+  else if (_activeTab === 'helpcontent') renderHelpContentTab();
+  updateBanner();
+  populateNavSectionDropdown();
+  if (_activePolicyKey) renderPanel(_activePolicyKey);
+}
+
+function setPageHtml(html) {
+  document.getElementById('pageContent').innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// POLICIES TAB — column grid
+// ════════════════════════════════════════
+
+function renderPoliciesTab() {
+  var policies = _stage.policies;
+  var sections = _stage.sections;
+
+  if (!policies || !policies.length) {
+    setPageHtml(
+      '<div class="loading-wrap">No policies yet.<br>' +
+      '<button class="btn btn-primary" style="margin-top:16px;" onclick="openNewPolicyModal()">' +
+        '<i class="fa fa-plus"></i> New Policy</button></div>'
+    );
+    return;
+  }
+
+  // Build section → policy map
+  var colMap  = {};
+  var colOrder = [];
+
+  sections.forEach(function(s) {
+    colMap[s.key] = { label: s.label, policies: [] };
+    colOrder.push(s.key);
+  });
+
+  var unsectioned = [];
+
+  policies.forEach(function(p) {
+    var docKey = p[0].toString().trim();
+    var navRow = _stage.navLabels.find(function(r) { return r[0] === docKey; });
+    var secKey = navRow ? cleanKey(navRow[2]) : '';
+    if (secKey && colMap[secKey]) colMap[secKey].policies.push(p);
+    else unsectioned.push(p);
+  });
+
+  if (unsectioned.length) {
+    colMap['__none__'] = { label: 'No Section', policies: unsectioned };
+    colOrder.push('__none__');
+  }
+
+  // Toolbar
+  var html =
+    '<div class="policies-toolbar">' +
+      '<div class="policies-toolbar-left">' +
+        '<span class="toolbar-stat"><i class="fa fa-file-lines"></i> ' + policies.length + ' polic' + (policies.length === 1 ? 'y' : 'ies') + '</span>' +
+        '<span class="toolbar-stat"><i class="fa fa-layer-group"></i> ' + sections.length + ' section' + (sections.length === 1 ? '' : 's') + '</span>' +
+      '</div>' +
+    '</div>';
+
+  // Columns scroll wrapper
+  html += '<div class="sections-scroll"><div class="sections-columns">';
+
+  colOrder.forEach(function(secKey) {
+    var col      = colMap[secKey];
+    var isNone   = secKey === '__none__';
+
+    html +=
+      '<div class="section-col">' +
+        '<div class="section-col-header' + (isNone ? ' unsectioned' : '') + '">' +
+          '<span class="section-col-title">' + esc(col.label) + '</span>' +
+          '<span class="section-col-count">' + col.policies.length + '</span>' +
+          (!isNone
+            ? '<div class="section-col-actions">' +
+                '<button class="section-col-action-btn" title="Rename" ' +
+                  'onclick="openRenameSectionPrompt(\'' + secKey + '\')">' +
+                  '<i class="fa fa-pen"></i></button>' +
+                '<button class="section-col-action-btn" title="Remove" ' +
+                  'onclick="deleteSection(\'' + secKey + '\')">' +
+                  '<i class="fa fa-trash"></i></button>' +
+              '</div>'
+            : '') +
+        '</div>';
+
+    col.policies.forEach(function(p) {
+      html += renderPolicyGridCard(p);
+    });
+
+    html +=
+        '<button class="policy-grid-add" onclick="openNewPolicyInSection(\'' + secKey + '\')">' +
+          '<i class="fa fa-plus"></i> Add policy' +
+        '</button>' +
+      '</div>';
+  });
+
+  // "Add section" column
+  html +=
+    '<div class="section-col">' +
+      '<button class="policy-grid-add" style="border-radius:8px;padding:20px 12px;" ' +
+              'onclick="openSectionModal()">' +
+        '<i class="fa fa-plus"></i><br>New Section' +
+      '</button>' +
+    '</div>';
+
+  html += '</div></div>'; // close sections-columns + sections-scroll
+
+  setPageHtml(html);
+}
+
+function renderPolicyGridCard(p) {
+  var docKey  = p[0].toString().trim();
+  var tagline = p[1].toString().trim();
+  var navRow  = _stage.navLabels.find(function(r) { return r[0] === docKey; });
+  var docRow  = _stage.docs.find(function(r) { return r[0] === docKey; });
+  var bullets = _stage.bullets.filter(function(r) { return r[0] === docKey; });
+  var details = _stage.bulletDetails.filter(function(r) { return r[0] === docKey; });
+  var label   = navRow ? navRow[1] : docKey;
+  var isActive = _activePolicyKey === docKey;
+
+  var chips = '';
+  chips += docRow
+    ? '<span class="status-chip status-chip-ok"><i class="fa fa-file"></i> Doc</span>'
+    : '<span class="status-chip status-chip-warn"><i class="fa fa-triangle-exclamation"></i> No Doc</span>';
+  chips += navRow
+    ? '<span class="status-chip status-chip-ok"><i class="fa fa-list"></i> Nav</span>'
+    : '<span class="status-chip status-chip-warn"><i class="fa fa-triangle-exclamation"></i> No Nav</span>';
+  chips += '<span class="status-chip status-chip-neutral">' + bullets.length + ' bullet' + (bullets.length === 1 ? '' : 's') + '</span>';
+  if (details.length) {
+    chips += '<span class="status-chip status-chip-neutral">' + details.length + ' detail' + (details.length === 1 ? '' : 's') + '</span>';
+  }
+
+  return (
+    '<div class="policy-grid-card' + (isActive ? ' active' : '') + '" ' +
+         'onclick="openPanel(\'' + docKey + '\')" id="pgc_' + docKey + '">' +
+      '<div class="policy-grid-card-accent"></div>' +
+      '<div class="policy-grid-card-inner">' +
+        '<div class="policy-grid-card-title">' + esc(label) + '</div>' +
+        '<div class="policy-grid-card-key">' + esc(docKey) +
+          (tagline ? ' — ' + esc(tagline) : '') + '</div>' +
+        '<div class="policy-grid-card-status">' + chips + '</div>' +
+      '</div>' +
+    '</div>'
+  );
+}
+
+// ════════════════════════════════════════
+// SIDE PANEL
+// ════════════════════════════════════════
+
+function openPanel(docKey) {
+  _activePolicyKey = docKey;
+
+  document.querySelectorAll('.policy-grid-card').forEach(function(el) {
+    el.classList.toggle('active', el.id === 'pgc_' + docKey);
+  });
+
+  renderPanel(docKey);
+
+  document.getElementById('sidePanel').classList.add('open');
+  document.getElementById('sidePanelBackdrop').classList.add('open');
+}
+
+function closePanel() {
+  _activePolicyKey = null;
+  document.getElementById('sidePanel').classList.remove('open');
+  document.getElementById('sidePanelBackdrop').classList.remove('open');
+  document.querySelectorAll('.policy-grid-card').forEach(function(el) {
+    el.classList.remove('active');
+  });
+}
+
+function renderPanel(docKey) {
+  var p       = _stage.policies.find(function(r) { return r[0] === docKey; });
+  if (!p) return;
+  var navRow  = _stage.navLabels.find(function(r) { return r[0] === docKey; });
+  var docRow  = _stage.docs.find(function(r) { return r[0] === docKey; });
+  var bullets = _stage.bullets.filter(function(r) { return r[0] === docKey; });
+  var details = _stage.bulletDetails.filter(function(r) { return r[0] === docKey; });
+  var label   = navRow ? navRow[1] : docKey;
+
+  document.getElementById('panelTitle').textContent    = label;
+  document.getElementById('panelSubtitle').textContent = docKey + (p[1] ? ' — ' + p[1] : '');
+
+  var html = '';
+
+  // Document
+  html += renderPanelSection('pdoc_' + docKey, 'Full Policy Document', 'doc',
+    '<button class="btn btn-add" onclick="openDocModal(\'' + docKey + '\')">' +
+      '<i class="fa fa-pen"></i> Edit</button>',
+    '<div class="item-row"><span class="item-text ' +
+      (docRow ? 'status-ok' : 'status-missing') + '">' +
+      (docRow ? '✅ ' + esc(docRow[1]) : '⚠️ No Doc ID — document will not load') +
+    '</span></div>'
+  );
+
+  // Nav Label
+  html += renderPanelSection('pnav_' + docKey, 'Sidebar Navigation Entry', 'nav',
+    '<button class="btn btn-add" onclick="openNavModal(\'' + docKey + '\')">' +
+      '<i class="fa fa-pen"></i> Edit</button>',
+    '<div class="item-row"><span class="item-text ' +
+      (navRow ? 'status-ok' : 'status-missing') + '">' +
+      (navRow
+        ? '✅ ' + esc(navRow[1]) + ' → ' + esc(navRow[3]) + ' (order: ' + navRow[4] + ')'
+        : '⚠️ Not in sidebar') +
+    '</span></div>'
+  );
+
+  // Bullets
+  html += renderPanelSection('pbul_' + docKey,
+    'Policy Bullets (' + bullets.length + ')', 'bul',
+    '<button class="btn btn-add" onclick="openBulletModal(\'' + docKey + '\',-1)">' +
+      '<i class="fa fa-plus"></i> Add</button>',
+    bullets.length
+      ? bullets.map(function(b) {
+          var ri = _stage.bullets.indexOf(b);
+          return (
+            '<div class="item-row">' +
+              '<span class="item-text">' + esc(b[1]) +
+                ' <small style="color:#80868b">(order: ' + b[2] + ')</small></span>' +
+              '<span class="item-actions">' +
+                '<button class="btn btn-secondary" onclick="openBulletModal(\'' + docKey + '\',' + ri + ')">' +
+                  '<i class="fa fa-pen"></i></button>' +
+                '<button class="btn btn-danger" onclick="stageDeleteRow(\'bullets\',' + ri + ',\'' + esc(b[1]) + '\')">' +
+                  '<i class="fa fa-trash"></i></button>' +
+              '</span>' +
+            '</div>'
+          );
+        }).join('')
+      : '<div class="item-row"><span class="item-text status-missing">No bullets yet.</span></div>'
+  );
+
+  // Bullet Details
+  html += renderPanelSection('pdet_' + docKey,
+    'Bullet Detail Modals (' + details.length + ')', 'det',
+    '<button class="btn btn-add" onclick="openDetailModal(\'' + docKey + '\',-1)">' +
+      '<i class="fa fa-plus"></i> Add</button>',
+    details.length
+      ? details.map(function(d) {
+          var ri = _stage.bulletDetails.indexOf(d);
+          return (
+            '<div class="item-row">' +
+              '<span class="item-text">' + esc(d[1]) +
+                ' <small style="color:#80868b">→ ' + esc(d[2]) + '</small></span>' +
+              '<span class="item-actions">' +
+                '<button class="btn btn-secondary" onclick="openDetailModal(\'' + docKey + '\',' + ri + ')">' +
+                  '<i class="fa fa-pen"></i></button>' +
+                '<button class="btn btn-danger" onclick="stageDeleteRow(\'bulletDetails\',' + ri + ',\'' + esc(d[1]) + '\')">' +
+                  '<i class="fa fa-trash"></i></button>' +
+              '</span>' +
+            '</div>'
+          );
+        }).join('')
+      : '<div class="item-row"><span class="item-text status-missing">No bullet details yet.</span></div>'
+  );
+
+  document.getElementById('panelBody').innerHTML = html;
+
+  // Restore open states for panel sections
+  ['pdoc','pnav','pbul','pdet'].forEach(function(prefix) {
+    var bodyEl = document.getElementById(prefix + '_' + docKey + '_body');
+    var chevEl = document.getElementById(prefix + '_' + docKey + '_chev');
+    if (bodyEl) { bodyEl.classList.add('open'); if (chevEl) chevEl.classList.add('open'); }
+  });
+}
+
+function renderPanelSection(id, title, helpKey, controls, content) {
+  var bodyId = id + '_body';
+  var chevId = id + '_chev';
+  return (
+    '<div class="panel-section">' +
+      '<div class="panel-section-header" onclick="togglePanelSection(\'' + bodyId + '\',\'' + chevId + '\')">' +
+        '<i class="fa fa-chevron-right panel-section-chevron" id="' + chevId + '"></i>' +
+        '<span class="panel-section-title">' + esc(title) + '</span>' +
+        '<div class="panel-section-controls" onclick="event.stopPropagation()">' +
+          '<button class="help-btn" onclick="openHelp(\'' + helpKey + '\')">' +
+            '<i class="fa fa-circle-question"></i></button>' +
+          controls +
+        '</div>' +
+      '</div>' +
+      '<div class="panel-section-body" id="' + bodyId + '">' + content + '</div>' +
+    '</div>'
+  );
+}
+
+function togglePanelSection(bodyId, chevId) {
+  var body = document.getElementById(bodyId);
+  var chev = document.getElementById(chevId);
+  if (!body) return;
+  var o = body.classList.toggle('open');
+  if (chev) chev.classList.toggle('open', o);
+  var header = body.previousElementSibling;
+  if (header) header.classList.toggle('open', o);
+}
+
+function openEditPolicyFromPanel() {
+  if (_activePolicyKey) openEditPolicyModal(_activePolicyKey);
+}
+
+function stageDeletePolicyFromPanel() {
+  if (_activePolicyKey) stageDeletePolicy(_activePolicyKey);
+}
+
+// ════════════════════════════════════════
+// ACCOUNTS TAB
+// ════════════════════════════════════════
+
+function renderAccountsTab() {
+  var accounts = _stage.accounts || [];
+  var html =
+    '<div class="policies-toolbar">' +
+      '<div class="policies-toolbar-left">' +
+        '<span class="toolbar-stat"><i class="fa fa-users"></i> ' +
+          accounts.length + ' account' + (accounts.length === 1 ? '' : 's') + '</span>' +
+      '</div>' +
+      '<button class="btn btn-primary" onclick="openAccountModal()">' +
+        '<i class="fa fa-plus"></i> Add Account</button>' +
+    '</div>' +
+    '<div class="data-card">' +
+      '<div class="data-card-header">Admin Accounts</div>' +
+      '<div class="data-card-body">';
+
+  if (!accounts.length) {
+    html += '<p class="empty-hint">No accounts yet.</p>';
+  } else {
+    accounts.forEach(function(a) {
+      var email = a[0].toString().trim();
+      var role  = a[1].toString().trim();
+      var name  = a[2] ? a[2].toString().trim() : '';
+      html +=
+        '<div class="item-row">' +
+          '<span class="item-text">' +
+            '<strong>' + esc(name || email) + '</strong>' +
+            (name ? ' <small style="color:#80868b;">— ' + esc(email) + '</small>' : '') +
+            ' <span style="font-size:10px;background:#e8f0fe;color:#1a73e8;' +
+              'padding:1px 6px;border-radius:10px;margin-left:4px;">' + esc(role) + '</span>' +
+          '</span>' +
+          '<span class="item-actions">' +
+            '<button class="btn btn-danger" onclick="deleteAccountConfirm(\'' + esc(email) + '\')">' +
+              '<i class="fa fa-trash"></i> Remove</button>' +
+          '</span>' +
+        '</div>';
+    });
+  }
+
+  html += '</div></div>';
+  setPageHtml(html);
+}
+
+function openAccountModal() {
+  document.getElementById('accountModalTitle').textContent = 'Add Account';
+  document.getElementById('acc_email').value       = '';
+  document.getElementById('acc_displayName').value = '';
+  document.getElementById('acc_email').disabled    = false;
+  openModal('accountModal');
+}
+
+function submitAccount() {
+  var email = document.getElementById('acc_email').value.trim().toLowerCase();
+  var name  = cleanText(document.getElementById('acc_displayName').value, 80);
+  if (!email) return showToast('Email is required.', 'error');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showToast('Invalid email format.', 'error');
+  if ((_stage.accounts || []).length >= LIMITS.maxAccounts) return showToast('Maximum ' + LIMITS.maxAccounts + ' accounts.', 'error');
+  var btn = document.getElementById('accountSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  google.script.run
+    .withSuccessHandler(function() {
+      btn.disabled = false; btn.textContent = 'Save Account';
+      closeModal('accountModal');
+      if (!_stage.accounts) _stage.accounts = [];
+      var idx = _stage.accounts.findIndex(function(a) { return a[0].toLowerCase() === email; });
+      var row = [email, 'admin', name];
+      if (idx >= 0) _stage.accounts[idx] = row; else _stage.accounts.push(row);
+      _live.accounts = deepClone(_stage.accounts);
+      renderAll();
+      showToast('Account saved ✅', 'ok');
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false; btn.textContent = 'Save Account';
+      showToast(err.message, 'error');
+    })
+    .saveAccount({ email: email, role: 'admin', displayName: name });
+}
+
+function deleteAccountConfirm(email) {
+  openDeleteModal('Remove Account', 'Remove admin access for ' + email + '?\n\nThis takes effect immediately.',
+    function() {
+      google.script.run
+        .withSuccessHandler(function() {
+          _stage.accounts = (_stage.accounts || []).filter(function(a) { return a[0].toLowerCase() !== email.toLowerCase(); });
+          _live.accounts  = deepClone(_stage.accounts);
+          renderAll();
+          showToast('Account removed ✅', 'ok');
+        })
+        .withFailureHandler(function(err) { showToast(err.message, 'error'); })
+        .deleteAccount(email);
+    }
+  );
+}
+
+// ════════════════════════════════════════
+// HELP CONTENT TAB
+// ════════════════════════════════════════
+
+function renderHelpContentTab() {
+  var helpContent = _stage.helpContent || {};
+  var keys        = Object.keys(helpContent);
+
+  var html =
+    '<div class="policies-toolbar">' +
+      '<div class="policies-toolbar-left">' +
+        '<span class="toolbar-stat"><i class="fa fa-circle-question"></i> ' +
+          keys.length + ' entr' + (keys.length === 1 ? 'y' : 'ies') + '</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="data-card">' +
+      '<div class="data-card-header">Help Entries</div>' +
+      '<div class="data-card-body">';
+
+  if (!keys.length) {
+    html += '<p class="empty-hint">No help content yet. Add rows to the HelpContent tab in your Sheet.</p>';
+  } else {
+    keys.forEach(function(key) {
+      var e = helpContent[key];
+      html +=
+        '<div class="help-entry-row">' +
+          '<span class="help-entry-key-badge">' + esc(key) + '</span>' +
+          '<div class="help-entry-info">' +
+            '<div class="help-entry-name">' + esc(e.title) + '</div>' +
+            '<div class="help-entry-desc">' + esc(e.desc) + '</div>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">' +
+            (e.img
+              ? '<span style="font-size:11px;color:#137333;"><i class="fa fa-image"></i></span>'
+              : '<span style="font-size:11px;color:#bdc1c6;"><i class="fa fa-image"></i></span>') +
+            '<button class="btn btn-secondary" onclick="openHelpEditModal(\'' + esc(key) + '\')">' +
+              '<i class="fa fa-pen"></i> Edit</button>' +
+            '<button class="btn btn-add" onclick="openHelp(\'' + esc(key) + '\')">' +
+              '<i class="fa fa-eye"></i> Preview</button>' +
+          '</div>' +
+        '</div>';
+    });
+  }
+
+  html += '</div></div>';
+  setPageHtml(html);
+}
+
+function openHelpEditModal(key) {
+  var entry = (_stage.helpContent || {})[key] || {};
+  document.getElementById('helpEditModalTitle').textContent = 'Edit: ' + key;
+  document.getElementById('he_key').value   = key;
+  document.getElementById('he_title').value = entry.title || '';
+  document.getElementById('he_img').value   = entry.img   || '';
+  document.getElementById('he_desc').value  = entry.desc  || '';
+  var container = document.getElementById('he_fieldsContainer');
+  container.innerHTML = '';
+  (entry.fields || []).forEach(function(f) { addHelpFieldRow(f); });
+  openModal('helpEditModal');
+}
+
+function addHelpField() { addHelpFieldRow({ name: '', required: true, hint: '' }); }
+
+function addHelpFieldRow(f) {
+  var c = document.getElementById('he_fieldsContainer');
+  var d = document.createElement('div');
+  d.className = 'item-row';
+  d.style.cssText = 'gap:6px;margin-bottom:6px;flex-wrap:wrap;';
+  d.innerHTML =
+    '<input type="text" placeholder="Field name" maxlength="60" class="he-field-name" ' +
+      'value="' + esc(f.name) + '" style="width:130px;border:1px solid #dadce0;border-radius:4px;padding:5px 8px;font-size:12px;">' +
+    '<select class="he-field-req" style="border:1px solid #dadce0;border-radius:4px;padding:5px 8px;font-size:12px;">' +
+      '<option value="true"' + (f.required ? ' selected' : '') + '>Required</option>' +
+      '<option value="false"' + (!f.required ? ' selected' : '') + '>Optional</option>' +
+    '</select>' +
+    '<input type="text" placeholder="Hint text" maxlength="300" class="he-field-hint" ' +
+      'value="' + esc(f.hint) + '" style="flex:1;min-width:120px;border:1px solid #dadce0;border-radius:4px;padding:5px 8px;font-size:12px;">' +
+    '<button class="btn btn-danger" onclick="this.parentNode.remove()" style="padding:4px 8px;">✕</button>';
+  c.appendChild(d);
+}
+
+function submitHelpEntry() {
+  var key   = document.getElementById('he_key').value.trim();
+  var title = cleanText(document.getElementById('he_title').value, 80);
+  var img   = cleanText(document.getElementById('he_img').value, 500);
+  var desc  = cleanText(document.getElementById('he_desc').value, 1000);
+  if (!title) return showToast('Title is required.', 'error');
+  var fields = [];
+  document.querySelectorAll('#he_fieldsContainer .item-row').forEach(function(row) {
+    var name = row.querySelector('.he-field-name').value.trim();
+    var req  = row.querySelector('.he-field-req').value === 'true';
+    var hint = row.querySelector('.he-field-hint').value.trim();
+    if (name) fields.push({ name: name, required: req, hint: hint });
+  });
+  var btn = document.getElementById('helpEditSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  google.script.run
+    .withSuccessHandler(function() {
+      btn.disabled = false; btn.textContent = 'Save';
+      if (!_stage.helpContent) _stage.helpContent = {};
+      _stage.helpContent[key] = { title: title, img: img, desc: desc, fields: fields };
+      if (!_live.helpContent) _live.helpContent = {};
+      _live.helpContent[key]  = deepClone(_stage.helpContent[key]);
+      closeModal('helpEditModal');
+      renderAll();
+      showToast('Help content saved ✅', 'ok');
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false; btn.textContent = 'Save';
+      showToast(err.message, 'error');
+    })
+    .saveHelpEntry({ key: key, title: title, img: img, desc: desc, fields: fields });
+}
+
+// ════════════════════════════════════════
+// HELP MODAL
+// ════════════════════════════════════════
+
+function openHelp(key) {
+  var content = (_stage && _stage.helpContent) ? _stage.helpContent[key] : null;
+  if (!content) { showToast('No help content configured for "' + key + '".'); return; }
+  document.getElementById('helpModalTitle').textContent = content.title || key;
+  document.getElementById('helpModalDesc').textContent  = content.desc  || '';
+  var imgEl  = document.getElementById('helpModalImg');
+  var phEl   = document.getElementById('helpImgPlaceholder');
+  var imgUrl = toDirectImageUrl(content.img);
+  if (imgUrl) {
+    imgEl.src = imgUrl;
+    imgEl.alt = content.title || '';
+    imgEl.style.display = 'block';
+    phEl.style.display = 'none';
+  } else {
+    imgEl.src = '';
+    imgEl.style.display = 'none';
+    phEl.style.display = 'flex';
+  }
+  var fieldsWrap = document.getElementById('helpModalFieldsWrap');
+  var fieldsList = document.getElementById('helpModalFields');
+  if (content.fields && content.fields.length) {
+    fieldsList.innerHTML = content.fields.map(function(f) {
+      return (
+        '<li>' +
+          '<span class="help-field-label">' + esc(f.name) +
+            '<span class="help-tag ' + (f.required ? 'help-tag-req' : 'help-tag-opt') + '">' +
+              (f.required ? 'required' : 'optional') + '</span>' +
+          '</span>' +
+          '<span>' + esc(f.hint) + '</span>' +
+        '</li>'
+      );
+    }).join('');
+    fieldsWrap.style.display = 'block';
+  } else {
+    fieldsWrap.style.display = 'none';
+  }
+  openModal('helpModal');
+}
+
+// ════════════════════════════════════════
+// DIRTY / BANNER
+// ════════════════════════════════════════
+
+function isDirty() { return JSON.stringify(_stage) !== JSON.stringify(_live); }
+
+function updateBanner() {
+  var b = document.getElementById('unsavedBanner');
+  if (!b) return;
+  isDirty() ? b.classList.add('visible') : b.classList.remove('visible');
+}
+
+// ════════════════════════════════════════
+// SAVE ALL
+// ════════════════════════════════════════
+
+function commitAllChanges() {
+  if (!isDirty()) { showToast('Nothing to save.'); return; }
+  _pendingDiff = buildDiff();
+  var tabs = Object.keys(_pendingDiff);
+  document.getElementById('saveSummaryList').innerHTML = tabs.map(function(tab) {
+    var rows = _pendingDiff[tab];
+    var live = (_live[tab] || []).length;
+    var stage = rows.length;
+    var added = Math.max(0, stage - live);
+    var removed = Math.max(0, live - stage);
+    var detail = added > 0 && removed > 0 ? added + ' added, ' + removed + ' removed'
+      : added > 0   ? added + ' row' + (added === 1 ? '' : 's') + ' added'
+      : removed > 0 ? removed + ' row' + (removed === 1 ? '' : 's') + ' removed'
+      : stage + ' row' + (stage === 1 ? '' : 's') + ' modified';
+    return (
+      '<div class="item-row" style="margin-bottom:6px;">' +
+        '<span class="item-text"><strong>' + esc(TAB_LABELS[tab] || tab) + '</strong>' +
+          ' <small style="color:#80868b;">— ' + detail + '</small></span>' +
+        '<span style="font-size:11px;background:#fce8e6;color:#c5221f;padding:2px 7px;border-radius:10px;">will rewrite</span>' +
+      '</div>'
+    );
+  }).join('');
+  openModal('saveModal');
+}
+
+function executeCommit() {
+  if (!_pendingDiff) return;
+  var btn = document.getElementById('saveModalConfirmBtn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  google.script.run
+    .withSuccessHandler(function() {
+      _live = deepClone(_stage); _pendingDiff = null;
+      closeModal('saveModal'); updateBanner();
+      showToast('Saved ✅', 'ok');
+      btn.disabled = false; btn.textContent = 'Confirm Save';
+    })
+    .withFailureHandler(function(err) {
+      _pendingDiff = null; closeModal('saveModal');
+      showToast('Save failed: ' + err.message, 'error');
+      btn.disabled = false; btn.textContent = 'Confirm Save';
+    })
+    .commitBatch(_pendingDiff);
+}
+
+function buildDiff() {
+  var diff = {};
+  ['policies','docs','navLabels','bullets','bulletDetails'].forEach(function(tab) {
+    if (JSON.stringify(_stage[tab]) !== JSON.stringify(_live[tab])) diff[tab] = _stage[tab];
+  });
+  return diff;
+}
+
+function discardChanges() { openModal('discardModal'); }
+
+function confirmDiscard() {
+  _stage = deepClone(_live);
+  closeModal('discardModal');
+  renderAll();
+  showToast('Changes discarded.');
+}
+
+// ════════════════════════════════════════
+// SECTION MANAGEMENT
+// ════════════════════════════════════════
+
+function openSectionModal() { renderSectionListEdit(); openModal('sectionModal'); }
+
+function renderSectionListEdit() {
+  var c = document.getElementById('sectionListEdit');
+  var s = _stage.sections;
+  if (!s.length) { c.innerHTML = '<p class="empty-hint" style="margin-bottom:8px;">No sections yet.</p>'; return; }
+  c.innerHTML = s.map(function(sec) {
+    return (
+      '<div class="item-row" style="margin-bottom:6px;">' +
+        '<span class="item-text"><strong>' + esc(sec.label) + '</strong>' +
+          ' <small style="color:#80868b">(' + esc(sec.key) + ')</small></span>' +
+        '<span class="item-actions">' +
+          '<button class="btn btn-danger" onclick="deleteSectionFromModal(\'' + sec.key + '\')">' +
+            '<i class="fa fa-trash"></i> Remove</button>' +
+        '</span>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+function addSection() {
+  var key = cleanKey(document.getElementById('new_secKey').value);
+  var lbl = cleanText(document.getElementById('new_secLabel').value, LIMITS.sectionLabel);
+  if (!key)  return showToast('Section key is required.', 'error');
+  if (!/^[a-z0-9_]+$/.test(key)) return showToast('Section key: lowercase, numbers, underscores only.', 'error');
+  if (key.length > LIMITS.sectionKey) return showToast('Section key max ' + LIMITS.sectionKey + ' chars.', 'error');
+  if (!lbl)  return showToast('Section label is required.', 'error');
+  if (_stage.sections.length >= LIMITS.maxSections) return showToast('Maximum ' + LIMITS.maxSections + ' sections.', 'error');
+  if (_stage.sections.find(function(s) { return s.key === key; })) return showToast('Section "' + key + '" already exists.', 'error');
+  _stage.sections.push({ key: key, label: lbl });
+  document.getElementById('new_secKey').value   = '';
+  document.getElementById('new_secLabel').value = '';
+  renderSectionListEdit();
+  populateNavSectionDropdown();
+  updateBanner();
+  renderPoliciesTab();
+  showToast('Section added — click Save All to write to Sheet.');
+}
+
+function deleteSectionFromModal(key) {
+  var has = _stage.navLabels.some(function(r) { return r[2] === key; });
+  var sec = _stage.sections.find(function(s) { return s.key === key; });
+  openDeleteModal('Remove Section',
+    'Remove section "' + (sec ? sec.label : key) + '"?' +
+      (has ? '\n\nPolicies assigned to it will move to "No Section".' : ''),
+    function() {
+      _stage.sections = _stage.sections.filter(function(s) { return s.key !== key; });
+      renderSectionListEdit();
+      populateNavSectionDropdown();
+      updateBanner();
+      renderPoliciesTab();
+      showToast('Section removed — click Save All to write to Sheet.');
+    }
+  );
+}
+
+function deleteSection(key) { deleteSectionFromModal(key); }
+
+function openRenameSectionPrompt(key) {
+  var sec = _stage.sections.find(function(s) { return s.key === key; });
+  if (!sec) return;
+  document.getElementById('rename_secKey').value   = key;
+  document.getElementById('rename_secLabel').value = sec.label;
+  openModal('renameSectionModal');
+}
+
+function confirmRenameSection() {
+  var key = document.getElementById('rename_secKey').value;
+  var lbl = cleanText(document.getElementById('rename_secLabel').value, LIMITS.sectionLabel);
+  if (!lbl) return showToast('Label cannot be empty.', 'error');
+
+  var sec = _stage.sections.find(function(s) { return s.key === key; });
+  if (!sec) return;
+
+  sec.label = lbl;
+  _stage.navLabels.forEach(function(r) { if (r[2] === key) r[3] = lbl; });
+
+  closeModal('renameSectionModal');
+  renderAll();
+  showToast('Section renamed — click Save All to write to Sheet.');
+}
+
+function populateNavSectionDropdown() {
+  var sel = document.getElementById('nav_section');
+  if (!sel) return;
+  var cur = sel.value;
+  sel.innerHTML = '<option value="">-- Select a section --</option>';
+  (_stage.sections || []).forEach(function(s) {
+    var o = document.createElement('option');
+    o.value = s.key; o.textContent = s.label + ' (' + s.key + ')';
+    sel.appendChild(o);
+  });
+  if (cur) sel.value = cur;
+}
+
+function onNavSectionChange() {
+  var key = document.getElementById('nav_section').value;
+  var sec = (_stage.sections || []).find(function(s) { return s.key === key; });
+  document.getElementById('nav_sectionLabel').value = sec ? sec.label : '';
+}
+
+// ════════════════════════════════════════
+// STAGING — POLICY
+// ════════════════════════════════════════
+
+function openNewPolicyModal() { openNewPolicyInSection(null); }
+
+function openNewPolicyInSection(secKey) {
+  document.getElementById('policyModalTitle').textContent = 'New Policy';
+  document.getElementById('f_docKey').value               = '';
+  document.getElementById('f_docKey').disabled            = false;
+  document.getElementById('f_tagline').value              = '';
+  document.getElementById('f_mediaType').value            = 'none';
+  document.getElementById('f_mediaId').value              = '';
+  document.getElementById('f_mediaCaption').value         = '';
+  document.getElementById('f_docKey').dataset.preselectSection = secKey || '';
+  togglePolicyMedia();
+  openModal('policyModal');
+}
+
+function openEditPolicyModal(docKey) {
+  var row = _stage.policies.find(function(r) { return r[0] === docKey; });
+  if (!row) return;
+  document.getElementById('policyModalTitle').textContent = 'Edit Policy';
+  document.getElementById('f_docKey').value               = row[0];
+  document.getElementById('f_docKey').disabled            = true;
+  document.getElementById('f_tagline').value              = row[1];
+  document.getElementById('f_mediaType').value            = row[2] || 'none';
+  document.getElementById('f_mediaId').value              = row[3] || '';
+  document.getElementById('f_mediaCaption').value         = row[4] || '';
+  togglePolicyMedia();
+  openModal('policyModal');
+}
+
+function stagePolicy() {
+  var docKey = cleanKey(document.getElementById('f_docKey').value);
+  if (!docKey) return showToast('Policy Key is required.', 'error');
+  if (!/^[a-z0-9_]+$/.test(docKey)) return showToast('Policy Key: lowercase, numbers, underscores only.', 'error');
+  if (docKey.length > LIMITS.docKey) return showToast('Policy Key max ' + LIMITS.docKey + ' chars.', 'error');
+  if (_stage.policies.length >= LIMITS.maxPolicies) return showToast('Maximum ' + LIMITS.maxPolicies + ' policies.', 'error');
+  var row = [
+    docKey,
+    cleanText(document.getElementById('f_tagline').value, LIMITS.tagline),
+    cleanText(document.getElementById('f_mediaType').value, 20),
+    cleanText(document.getElementById('f_mediaId').value, LIMITS.mediaId),
+    cleanText(document.getElementById('f_mediaCaption').value, LIMITS.caption)
+  ];
+  var idx = _stage.policies.findIndex(function(r) { return r[0] === docKey; });
+  if (idx >= 0) _stage.policies[idx] = row; else _stage.policies.push(row);
+  closeModal('policyModal');
+  renderAll();
+  openPanel(docKey);
+  showToast('Policy updated — click Save All to write to Sheet.');
+}
+
+// ════════════════════════════════════════
+// STAGING — NAV
+// ═══════════════════════���════════════════
+
+function openNavModal(docKey) {
+  populateNavSectionDropdown();
+  var row = _stage.navLabels.find(function(r) { return r[0] === docKey; });
+  document.getElementById('nav_docKey').value       = docKey;
+  document.getElementById('nav_label').value        = row ? row[1] : '';
+  document.getElementById('nav_section').value      = row ? row[2] : '';
+  document.getElementById('nav_sectionLabel').value = row ? row[3] : '';
+  document.getElementById('nav_order').value        = row ? row[4] : '';
+  openModal('navModal');
+}
+
+function stageNavLabel() {
+  var docKey  = document.getElementById('nav_docKey').value;
+  var label   = cleanText(document.getElementById('nav_label').value, LIMITS.label);
+  var section = cleanKey(document.getElementById('nav_section').value);
+  var secLbl  = cleanText(document.getElementById('nav_sectionLabel').value, LIMITS.sectionLabel);
+  var order   = validateOrder(document.getElementById('nav_order').value, 'Order');
+  if (!label)   return showToast('Label is required.', 'error');
+  if (!section) return showToast('Select a section.', 'error');
+  if (order === null) return;
+  var row = [docKey, label, section, secLbl, order];
+  var idx = _stage.navLabels.findIndex(function(r) { return r[0] === docKey; });
+  if (idx >= 0) _stage.navLabels[idx] = row; else _stage.navLabels.push(row);
+  closeModal('navModal');
+  renderAll();
+  if (_activePolicyKey) renderPanel(_activePolicyKey);
+  showToast('Nav label updated — click Save All to write to Sheet.');
+}
+
+// ════════════════════════════════════════
+// STAGING — DOC
+// ════════════════════════════════════════
+
+function openDocModal(docKey) {
+  var row = _stage.docs.find(function(r) { return r[0] === docKey; });
+  document.getElementById('doc_docKey').value = docKey;
+  document.getElementById('doc_docId').value  = row ? row[1] : '';
+  openModal('docModal');
+}
+
+function stageDoc() {
+  var docKey = document.getElementById('doc_docKey').value;
+  var docId  = cleanText(document.getElementById('doc_docId').value, LIMITS.mediaId);
+  if (!docId) return showToast('Doc ID is required.', 'error');
+  var safeId = docId.replace(/[^a-zA-Z0-9_\-]/g, '');
+  if (!safeId || safeId !== docId) return showToast('Invalid Doc ID — letters, numbers, hyphens, underscores only.', 'error');
+  var row = [docKey, docId];
+  var idx = _stage.docs.findIndex(function(r) { return r[0] === docKey; });
+  if (idx >= 0) _stage.docs[idx] = row; else _stage.docs.push(row);
+  closeModal('docModal');
+  renderAll();
+  if (_activePolicyKey) renderPanel(_activePolicyKey);
+  showToast('Doc ID updated — click Save All to write to Sheet.');
+}
+
+// ════════════════════════════════════════
+// STAGING — BULLET
+// ════════════════════════════════════════
+
+function openBulletModal(docKey, rowIndex) {
+  document.getElementById('b_docKey').value   = docKey;
+  document.getElementById('b_rowIndex').value = rowIndex;
+  if (rowIndex >= 0) {
+    var row = _stage.bullets[rowIndex];
+    document.getElementById('bulletModalTitle').textContent = 'Edit Bullet';
+    document.getElementById('b_bulletText').value = row[1];
+    document.getElementById('b_order').value      = row[2];
+  } else {
+    document.getElementById('bulletModalTitle').textContent = 'Add Bullet';
+    document.getElementById('b_bulletText').value = '';
+    var existing = _stage.bullets.filter(function(r) { return r[0] === docKey; });
+    document.getElementById('b_order').value = Math.min(existing.length + 1, LIMITS.orderMax);
+  }
+  openModal('bulletModal');
+}
+
+function stageBullet() {
+  var docKey   = document.getElementById('b_docKey').value;
+  var text     = cleanText(document.getElementById('b_bulletText').value, 200);
+  var order    = validateOrder(document.getElementById('b_order').value, 'Order');
+  var rowIndex = parseInt(document.getElementById('b_rowIndex').value);
+  if (!text) return showToast('Bullet text is required.', 'error');
+  if (order === null) return;
+  var existing = _stage.bullets.filter(function(r) { return r[0] === docKey; });
+  if (rowIndex < 0 && existing.length >= LIMITS.maxBullets) return showToast('Max ' + LIMITS.maxBullets + ' bullets per policy.', 'error');
+  var row = [docKey, text, order];
+  if (rowIndex >= 0) _stage.bullets[rowIndex] = row; else _stage.bullets.push(row);
+  closeModal('bulletModal');
+  renderAll();
+  if (_activePolicyKey) renderPanel(_activePolicyKey);
+  showToast('Bullet updated — click Save All to write to Sheet.');
+}
+
+// ════════════════════════════════════════
+// STAGING — BULLET DETAIL
+// ════════════════════════════════════════
+
+function openDetailModal(docKey, rowIndex) {
+  var bullets = _stage.bullets.filter(function(r) { return r[0] === docKey; });
+  if (!bullets.length) { showToast('Add bullets first before adding bullet details.', 'error'); return; }
+  document.getElementById('d_docKey').value   = docKey;
+  document.getElementById('d_rowIndex').value = rowIndex;
+  var sel = document.getElementById('d_bulletText');
+  sel.innerHTML = bullets.map(function(b) {
+    return '<option value="' + esc(b[1]) + '">' + esc(b[1]) + '</option>';
+  }).join('');
+  if (rowIndex >= 0) {
+    var row = _stage.bulletDetails[rowIndex];
+    document.getElementById('detailModalTitle').textContent = 'Edit Bullet Detail';
+    sel.value = row[1];
+    document.getElementById('d_title').value        = row[2]  || '';
+    document.getElementById('d_body').value         = row[3]  || '';
+    document.getElementById('d_mediaType').value    = row[4]  || 'none';
+    document.getElementById('d_mediaId').value      = row[5]  || '';
+    document.getElementById('d_mediaCaption').value = row[6]  || '';
+    document.getElementById('d_mediaDefault').value = row[7]  || 'slides';
+    document.getElementById('d_slidesId').value     = row[8]  || '';
+    document.getElementById('d_videoId').value      = row[9]  || '';
+    document.getElementById('d_videoType').value    = row[10] || 'gdrive-video';
+  } else {
+    document.getElementById('detailModalTitle').textContent = 'Add Bullet Detail';
+    ['d_title','d_body','d_mediaId','d_mediaCaption','d_slidesId','d_videoId']
+      .forEach(function(id) { document.getElementById(id).value = ''; });
+    document.getElementById('d_mediaType').value    = 'none';
+    document.getElementById('d_mediaDefault').value = 'slides';
+    document.getElementById('d_videoType').value    = 'gdrive-video';
+  }
+  toggleDetailMedia();
+  openModal('detailModal');
+}
+
+function stageDetail() {
+  var docKey     = document.getElementById('d_docKey').value;
+  var rowIndex   = parseInt(document.getElementById('d_rowIndex').value);
+  var bulletText = document.getElementById('d_bulletText').value;
+  var title      = cleanText(document.getElementById('d_title').value, LIMITS.title);
+  var body       = cleanText(document.getElementById('d_body').value, LIMITS.body);
+  if (!bulletText) return showToast('Select a bullet.', 'error');
+  if (!title)      return showToast('Title is required.', 'error');
+  var existing = _stage.bulletDetails.filter(function(r) { return r[0] === docKey; });
+  if (rowIndex < 0 && existing.length >= LIMITS.maxDetails) return showToast('Max ' + LIMITS.maxDetails + ' bullet details per policy.', 'error');
+  var row = [
+    docKey, bulletText, title, body,
+    cleanText(document.getElementById('d_mediaType').value, 20),
+    cleanText(document.getElementById('d_mediaId').value, LIMITS.mediaId),
+    cleanText(document.getElementById('d_mediaCaption').value, LIMITS.caption),
+    cleanText(document.getElementById('d_mediaDefault').value, 20),
+    cleanText(document.getElementById('d_slidesId').value, LIMITS.mediaId),
+    cleanText(document.getElementById('d_videoId').value, LIMITS.mediaId),
+    cleanText(document.getElementById('d_videoType').value, 20)
+  ];
+  if (rowIndex >= 0) _stage.bulletDetails[rowIndex] = row; else _stage.bulletDetails.push(row);
+  closeModal('detailModal');
+  renderAll();
+  if (_activePolicyKey) renderPanel(_activePolicyKey);
+  showToast('Bullet detail updated — click Save All to write to Sheet.');
+}
+
+// ════════════════════════════════════════
+// STAGING — DELETES
+// ════════════════════════════════════════
+
+function stageDeletePolicy(docKey) {
+  var navRow = _stage.navLabels.find(function(r) { return r[0] === docKey; });
+  var label  = navRow ? navRow[1] : docKey;
+  openDeleteModal('Delete Policy',
+    'Delete "' + label + '" (' + docKey + ') and all its related Docs, Nav Labels, Bullets, and Bullet Details?',
+    function() {
+      _stage.policies      = _stage.policies.filter(function(r)      { return r[0] !== docKey; });
+      _stage.docs          = _stage.docs.filter(function(r)          { return r[0] !== docKey; });
+      _stage.navLabels     = _stage.navLabels.filter(function(r)     { return r[0] !== docKey; });
+      _stage.bullets       = _stage.bullets.filter(function(r)       { return r[0] !== docKey; });
+      _stage.bulletDetails = _stage.bulletDetails.filter(function(r) { return r[0] !== docKey; });
+      closePanel();
+      renderAll();
+      showToast('Policy removed — click Save All to write to Sheet.');
+    }
+  );
+}
+
+function stageDeleteRow(tabName, rowIndex, label) {
+  openDeleteModal('Delete Row',
+    'Delete "' + (label || 'this row') + '" from ' + (TAB_LABELS[tabName] || tabName) + '?',
+    function() {
+      _stage[tabName].splice(rowIndex, 1);
+      renderAll();
+      if (_activePolicyKey) renderPanel(_activePolicyKey);
+      showToast('Row removed — click Save All to write to Sheet.');
+    }
+  );
+}
+
+// ════════════════════════════════════════
+// DELETE MODAL
+// ════════════════════════════════════════
+
+function openDeleteModal(title, message, onConfirm) {
+  document.getElementById('deleteModalTitle').textContent   = title;
+  document.getElementById('deleteModalMessage').textContent = message;
+  _pendingDelete = onConfirm;
+  document.getElementById('deleteModalConfirmBtn').onclick = function() {
+    closeModal('deleteModal');
+    if (_pendingDelete) { _pendingDelete(); _pendingDelete = null; }
+  };
+  openModal('deleteModal');
+}
+
+// ════════════════════════════════════════
+// MEDIA TOGGLES
+// ════════════════════════════════════════
+
+function togglePolicyMedia() {
+  var type  = document.getElementById('f_mediaType').value;
+  var group = document.getElementById('policyMediaIdGroup');
+  var hint  = document.getElementById('policyMediaIdHint');
+  group.style.display = type === 'none' ? 'none' : 'block';
+  if (type !== 'none') hint.textContent = MEDIA_HINTS[type] || '';
+}
+
+function toggleDetailMedia() {
+  var type   = document.getElementById('d_mediaType').value;
+  var single = document.getElementById('d_singleFields');
+  var dual   = document.getElementById('d_dualFields');
+  var hint   = document.getElementById('d_mediaIdHint');
+  single.style.display = 'none'; dual.style.display = 'none';
+  if (type === 'dual') { dual.style.display = 'block'; }
+  else if (type !== 'none') { single.style.display = 'block'; hint.textContent = MEDIA_HINTS[type] || ''; }
+}
+
+// ════════════════════════════════════════
+// MODAL HELPERS
+// ════════════════════════════════════════
+
+function openModal(id)   { document.getElementById(id).classList.add('open'); }
+function closeModal(id)  { document.getElementById(id).classList.remove('open'); }
+function cancelModal(id) { closeModal(id); }
+
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('modal-backdrop')) e.target.classList.remove('open');
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    var anyModal = document.querySelector('.modal-backdrop.open');
+    if (anyModal) { anyModal.classList.remove('open'); return; }
+    closePanel();
+  }
+});
+
+// ════════════════════════════════════════
+// VALIDATION & SANITISATION
+// ════════════════════════════════════════
+
+function validateOrder(val, fieldName) {
+  var n = parseInt(val, 10);
+  if (isNaN(n) || n < LIMITS.orderMin || n > LIMITS.orderMax) {
+    showToast((fieldName || 'Order') + ' must be a whole number between ' + LIMITS.orderMin + ' and ' + LIMITS.orderMax + '.', 'error');
+    return null;
+  }
+  return n;
+}
+
+function cleanKey(val) {
+  return String(val || '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+}
+
+function cleanText(val, maxLen) {
+  return String(val || '').trim().substring(0, maxLen || 200);
+}
+
+function deriveSections(navLabels) {
+  var seen = {}; var out = [];
+  (navLabels || []).forEach(function(r) {
+    var key = cleanKey(r[2]); var lbl = cleanText(r[3], LIMITS.sectionLabel);
+    if (key && !seen[key]) { seen[key] = true; out.push({ key: key, label: lbl }); }
+  });
+  return out;
+}
+
+function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+// ════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════
+
+var _toastTimer;
+
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'toast ' + (type || '');
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(function() { t.classList.remove('show'); }, 3500);
+}
+
+// ════════════════════════════════════════
+// ESC HTML
+// ════════════════════════════════════════
+
+function esc(str) {
+  return String(str || '')
+    .replace(/&/g,  '&amp;')
+    .replace(/</g,  '&lt;')
+    .replace(/>/g,  '&gt;')
+    .replace(/"/g,  '&quot;')
+    .replace(/'/g,  '&#x27;');
+}
+
+function openImageZoom(src, caption) {
+  var overlay = document.getElementById('image-zoom-overlay');
+  var img     = document.getElementById('image-zoom-img');
+  var cap     = document.getElementById('image-zoom-caption');
+
+  img.src           = src;
+  img.alt           = caption || '';
+  cap.textContent   = caption || '';
+  cap.style.display = caption ? 'block' : 'none';
+
+  // ✅ Reset first in case previous close is mid-transition
+  overlay.classList.remove('active');
+  overlay.style.display = 'flex';
+
+  document.body.style.overflow = 'hidden';
+
+  // Trigger fade in on next frame
+  requestAnimationFrame(function() {
+    overlay.classList.add('active');
+  });
+}
+
+function closeImageZoom() {
+  var overlay = document.getElementById('image-zoom-overlay');
+  overlay.classList.remove('active');
+  document.body.style.overflow = '';
+
+  // ✅ Wait for fade out THEN hide — so overlay stops blocking clicks
+  setTimeout(function() {
+    overlay.style.display = 'none';
+    document.getElementById('image-zoom-img').src = '';
+  }, 200);
+}
+
+// Close on Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    var overlay = document.getElementById('image-zoom-overlay');
+    if (overlay && overlay.classList.contains('active')) {
+      closeImageZoom();
+    }
+  }
+});
+</script>
+</body>
+</html>
