@@ -81,13 +81,45 @@ function getPolicyMeta() {
     var docKey = row[0].toString().trim();
     if (!docKey) continue;
 
+    // ── Build infographic/media object (now called infographic) ──
+    var infographicObj = null;
+    if (row[2] && row[3]) {
+      infographicObj = {
+        type:    row[2].toString().trim(),
+        id:      row[3].toString().trim(),
+        caption: row[4] ? row[4].toString().trim() : ''
+      };
+    }
+
+    // ── Build slides object (column F = slides ID) ──
+    var slidesObj = null;
+    if (row[5]) {
+      var slidesId = row[5].toString().trim();
+      if (slidesId) {
+        slidesObj = {
+          type: 'gslides',
+          id:   slidesId
+        };
+      }
+    }
+
+    // ── Build video object (column G = video ID) ──
+    var videoObj = null;
+    if (row[6]) {
+      var videoId = row[6].toString().trim();
+      if (videoId) {
+        videoObj = {
+          type: 'gdrive-video',
+          id:   videoId
+        };
+      }
+    }
+
     meta[docKey] = {
-      tagline:       row[1].toString().trim(),
-      media: {
-        type:        row[2].toString().trim(),
-        id:          row[3].toString().trim(),
-        caption:     row[4].toString().trim()
-      },
+      tagline:       row[1] ? row[1].toString().trim() : '',
+      infographic:   infographicObj,
+      slides:        slidesObj,
+      video:         videoObj,
       bullets:       [],
       bulletDetails: {}
     };
